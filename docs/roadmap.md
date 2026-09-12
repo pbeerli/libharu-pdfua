@@ -28,26 +28,98 @@ sections), refined for this standalone project.
 
 ## Milestone 1 -- one tagged table page (first real structure-tree work)
 
-- Implement real `/StructTreeRoot` population: `HPDF_UA_BeginStructureElement()`/
-  `HPDF_UA_EndStructureElement()` building an actual structure-element tree
-  (not the current empty placeholder), with a role map covering `Table`/
-  `TR`/`TH`/`TD` plus the generic `Document`/`Sect`/`P` types.
-- Implement real marked-content tagging: `HPDF_UA_BeginMarkedContent()`/
-  `HPDF_UA_EndMarkedContent()` emitting `BDC .../EMC` into the page content
-  stream with a real, page-unique MCID, and building the `/ParentTree`
-  entries that tie each MCID back to its structure element.
-- Implement `/Scope` (or `/Headers`) table-header association.
-- Prototype output: one page, one table, with real headers, validated
-  end-to-end with veraPDF (`--flavour ua1`) -- the first milestone where
-  "does this pass PDF/UA-1 validation" is a real yes/no answer, not aspirational.
+**Done and veraPDF-validated, 2026-09-12.** `HPDF_UA_Context` (a new,
+explicit resource handle, since the tagging bookkeeping needs a home that
+isn't the vendored `HPDF_Doc` struct -- see `hpdf_ua.h`'s design note),
+`HPDF_UA_BeginStructureElement()`/`HPDF_UA_EndStructureElement()` (real
+`/StructTreeRoot` population, tree linkage happens immediately at Begin
+time), `HPDF_UA_BeginMarkedContent()`/`HPDF_UA_EndMarkedContent()` (real
+`BDC .../EMC` + MCID + `/ParentTree`), `HPDF_UA_SetTableHeaderScope()`
+(`/Scope`, brought forward from Milestone 2 since it's a one-line addition
+once a struct element exists), `HPDF_UA_SetAlternateText()` (`/Alt`,
+likewise brought forward from Milestone 2), and
+`HPDF_UA_BeginArtifact()`/`HPDF_UA_EndArtifact()` (brought forward from
+Milestone 4 -- see below for why) are all real and working.
+
+`demo/tagged_table_demo.c` produces a real `Document > Table > TR >
+TH/TD` tree, one MCID per cell (15 for a 3-column/4-row-plus-header
+table), verified two ways: direct inspection of the generated PDF's bytes
+(role names, `/Scope`, MCID count, `/ParentTree`/`/StructParents` all
+present and correct), and a real `validate/run_verapdf.sh` run --
+**104 of 106 PDF/UA-1 checks pass.** `leaks --atExit` confirms zero memory
+leaks for a full create-tag-save-free cycle.
+
+**Two real bugs found and fixed by that first actual veraPDF run, not by
+inspection** -- concrete evidence for why "validate end-to-end with
+veraPDF" was the right bar to set, not just "looks right by eye":
+1. The demo's decorative table-border rectangle was drawn with no BDC/EMC
+   wrapping at all -- untagged-by-omission, correctly flagged by veraPDF
+   (ISO 14289-1:2014 7.1/3, "content shall be marked as Artifact or
+   tagged as real content"). Fixed by implementing
+   `HPDF_UA_BeginArtifact()`/`HPDF_UA_EndArtifact()` for real now, instead
+   of leaving them stubbed until Milestone 4 as originally planned -- a
+   present, validated gap couldn't reasonably wait for a future milestone
+   once it was real rather than hypothetical.
+2. The first `HPDF_UA_BeginArtifact()` implementation wrote `/Artifact
+   BDC` (one operand) -- syntactically invalid PDF, since `BDC` always
+   requires a second (properties dict or name) operand; `BMC` is the
+   correct one-operand form for "no properties." veraPDF correctly
+   treated the malformed token as not-a-valid-tag, still failing the same
+   check. Fixed by using `BMC` instead. This was caught only by actually
+   running the real validator a second time after the first fix, not by
+   re-reading the code -- the bytes looked plausible at a glance.
+
+**Two real, understood gaps remain, deliberately not fixed in this pass
+because they are outside this milestone's actual scope (structure tree /
+marked content), not because they don't matter:**
+- ISO 14289-1:2014 7.1/8: the document catalog has no `/Metadata` (XMP)
+  stream. libharu's existing PDF/A support (`hpdf_pdfa.c`'s
+  `HPDF_PDFA_AddXmpMetadata()`) has the machinery to write one, but reusing
+  it directly would re-create its own (non-xref-registered)
+  `/MarkInfo`+`/StructTreeRoot` alongside this project's own, exactly
+  reintroducing the `HPDF_OTYPE_DIRECT` bug found and fixed below unless
+  specifically guarded against -- a real integration task, not a one-line
+  fix, left for a dedicated pass.
+- ISO 14289-1:2014 7.21.4.1/1: the demo uses libharu's Standard-14
+  `Helvetica` (never embedded, by PDF convention) -- PDF/UA-1 requires all
+  rendering fonts to be embedded. This is a font-provisioning concern
+  (needs a real TTF file with a permissive license bundled and loaded via
+  `HPDF_LoadTTFontFromFile(..., HPDF_TRUE)`), unrelated to tagging; left
+  for whichever real consumer (this project's own future demos, or
+  Migrate's eventual integration) actually needs to ship a real embedded
+  font.
+
+**One more real bug found and fixed along the way, unrelated to PDF/UA
+mechanics**: `HPDF_UA_EnableTagging()`'s `struct_tree_root` was never
+`HPDF_Xref_Add()`-registered (a direct carry-over from the PDF/A code
+path it was adapted from, which never needed to reference
+`struct_tree_root` a second time). The moment Milestone 1's top-level
+structure elements each tried to point their own `/P` back at
+`struct_tree_root`, libharu's object model -- which marks any
+non-xref-registered object `HPDF_OTYPE_DIRECT` ("owned by exactly one
+container") the instant it is first added anywhere, silently refusing a
+second `HPDF_Dict_Add()`/`HPDF_Array_Add()` with `HPDF_INVALID_OBJECT` --
+made every single top-level `HPDF_UA_BeginStructureElement()` call fail.
+Found via direct, deliberate instrumentation (temporary debug prints,
+removed after use) once the first few debugging attempts themselves had
+bugs (missing braces after scripted edits produced misleadingly
+always-failing code) -- worth remembering: a debugging aid can have its
+own bugs, re-check it before trusting its output. Fixed by registering
+`struct_tree_root` in the xref immediately after creation, matching every
+other shared object this project creates.
 
 ## Milestone 2 -- one tagged figure/histogram page
 
-- `HPDF_UA_SetAlternateText()` on a `Figure` structure element.
+`HPDF_UA_SetAlternateText()` itself is already done (brought forward into
+Milestone 1, see above -- a one-line `/Alt` addition once
+`HPDF_UA_StructElem` existed). What remains:
+
 - Exercise the same structure-tree/marked-content machinery from Milestone 1
   against a bar-chart-style figure (matching Migrate's own
   `plot_svg.c`-equivalent histogram rendering), not just a table -- confirms
   the API generalizes rather than being table-shaped only.
+- A real demo (`demo/tagged_histogram_demo.c` or similar), veraPDF-validated
+  the same way Milestone 1's table demo was.
 
 ## Milestone 3 -- one tagged line/skyline-style plot page
 
@@ -58,14 +130,22 @@ sections), refined for this standalone project.
   order across multiple overlaid series needs a real decision, not just
   "whatever order the code happens to draw them in").
 
-## Milestone 4 -- artifacts, outline/bookmarks, document-level polish
+## Milestone 4 -- outline/bookmarks, document-level polish
 
-- `HPDF_UA_MarkArtifact()` for decorative/non-content marks (page borders,
-  repeated headers).
+`HPDF_UA_BeginArtifact()`/`HPDF_UA_EndArtifact()` are already done (brought
+forward into Milestone 1, see above -- a real veraPDF failure on
+Milestone 1's own demo made this a present, not hypothetical, need). What
+remains:
+
 - Tie `HPDF_CreateOutline()`'s existing bookmark mechanism to real structure
   elements (a PDF/UA requirement libharu's existing outline support doesn't
   yet satisfy on its own).
 - `/Tabs /S` on every page.
+- The two real gaps Milestone 1's veraPDF run found but left unfixed
+  (XMP `/Metadata` stream; embedded fonts) belong here too, alongside
+  `HPDF_UA_SetTableDataHeaders()` (`/Headers`, for irregular tables --
+  still stubbed, `/Scope` covers Migrate's actual simple-table needs so
+  far).
 
 ## Milestone 5 -- decide
 

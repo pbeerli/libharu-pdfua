@@ -135,15 +135,24 @@ March 2026). Use these as the implementation spec, not just this checklist.
 
 Confirmed directly against the vendored source under `vendor/libharu/`:
 
-| Requirement | Status in vendored libharu 2.4.5 |
+| Requirement | Status |
 | --- | --- |
-| `/MarkInfo`, `/Marked true` | Present (`hpdf_pdfa.c`, part of PDF/A support) |
-| `/StructTreeRoot` | Present but empty -- just `/Type /StructTreeRoot`, no `/K` children, no real tree |
-| `/ParentTree`, MCIDs, `BDC`/`EMC` content-stream tagging | Absent entirely |
-| `/RoleMap` | Absent |
-| `/Lang` (catalog) | Absent (no setter anywhere) |
-| `/Title` (Info dict) | Present (`HPDF_SetInfoAttr`) |
-| `/ViewerPreferences /DisplayDocTitle` | Absent (`HPDF_Catalog_SetViewerPreference` exists but has no `DisplayDocTitle` flag defined) |
-| `/Alt` (figure alternate text) | Absent |
-| Table header association (`/Scope`/`/Headers`) | Absent (no structure-tree machinery exists to hang it on yet) |
-| Outline/bookmarks | Present (`HPDF_CreateOutline` and friends), not yet tied to structure elements |
+| `/MarkInfo`, `/Marked true` | Real, working (`HPDF_UA_EnableTagging()`) |
+| `/StructTreeRoot`, real population | Real, working (`HPDF_UA_BeginStructureElement()`) -- Milestone 1 |
+| `/ParentTree`, MCIDs, `BDC`/`EMC` content-stream tagging | Real, working (`HPDF_UA_BeginMarkedContent()`/`EndMarkedContent()`) -- Milestone 1, veraPDF-validated |
+| `/RoleMap` | Not needed -- every role this project uses is a PDF/UA-1 standard structure type already |
+| `/Lang` (catalog) | Real, working (`HPDF_UA_SetDocumentLanguage()`) |
+| `/Title` (Info dict) | Real (libharu's own `HPDF_SetInfoAttr`, unchanged) |
+| `/ViewerPreferences /DisplayDocTitle` | Real, working (`HPDF_UA_SetDisplayDocTitle()`) |
+| `/Alt` (figure alternate text) | Real, working (`HPDF_UA_SetAlternateText()`) |
+| Table header association: `/Scope` | Real, working (`HPDF_UA_SetTableHeaderScope()`) |
+| Table header association: `/Headers` (irregular tables) | Still a stub (`HPDF_UA_SetTableDataHeaders()`) -- `/Scope` covers this project's actual simple-table needs so far |
+| Artifacts (`/Artifact` `BMC`/`EMC`) | Real, working (`HPDF_UA_BeginArtifact()`/`EndArtifact()`) -- brought forward from Milestone 4 after a real veraPDF failure |
+| Outline/bookmarks | libharu's own `HPDF_CreateOutline` exists, not yet tied to structure elements -- Milestone 4 |
+| XMP `/Metadata` stream | Still absent -- confirmed by a real veraPDF failure (ISO 14289-1:2014 7.1/8), fix deferred to Milestone 4 (see roadmap for why reusing libharu's PDF/A `HPDF_PDFA_AddXmpMetadata()` isn't a drop-in fix) |
+| Embedded fonts | Still absent for Standard-14 fonts like the demos' Helvetica -- confirmed by a real veraPDF failure (ISO 14289-1:2014 7.21.4.1/1), a font-provisioning task for whichever real consumer needs it, deferred to Milestone 4 |
+
+First real, end-to-end veraPDF run (2026-09-12, `demo/tagged_table_demo.c`,
+`--flavour ua1`): **104 of 106 checks pass**, both remaining failures are
+the two rows above, neither related to structure-tree/marked-content
+tagging itself.

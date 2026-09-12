@@ -101,6 +101,23 @@ HPDF_UA_EnableTagging (HPDF_Doc pdf)
         if (!struct_tree_root)
             return HPDF_CheckError (&pdf->error);
 
+        /* Must be xref-registered (indirect) BEFORE being added anywhere,
+         * unlike the original PDF/A path this was adapted from (which
+         * never needed to reference struct_tree_root a second time).
+         * Milestone 1's structure elements all point their own /P back at
+         * struct_tree_root for top-level elements -- and libharu's object
+         * model marks any object HPDF_OTYPE_DIRECT ("owned by exactly one
+         * container") the moment it is added anywhere via HPDF_Dict_Add()/
+         * HPDF_Array_Add() unless it is already xref-registered first,
+         * silently refusing any second HPDF_Dict_Add()/HPDF_Array_Add()
+         * call with HPDF_INVALID_OBJECT. Found the hard way, empirically,
+         * while first testing Milestone 1: every single
+         * HPDF_UA_BeginStructureElement() call for a top-level element
+         * failed until this fix, since each one tries to add
+         * struct_tree_root as its own /P value. */
+        if (HPDF_Xref_Add (pdf->xref, struct_tree_root) != HPDF_OK)
+            return HPDF_CheckError (&pdf->error);
+
         ret += HPDF_Dict_Add (pdf->catalog, "StructTreeRoot", struct_tree_root);
         ret += HPDF_Dict_AddName (struct_tree_root, "Type", "StructTreeRoot");
 

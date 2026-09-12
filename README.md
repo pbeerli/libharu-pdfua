@@ -26,23 +26,27 @@ target -- see `docs/pdf_ua_requirements.md`.
 
 ## Status
 
-**Milestone 0 (scaffolding) -- just started, 2026-09-12.** See
-`docs/roadmap.md` for the full milestone list and `CHANGES.md` for exactly
-what exists right now. In short: a few small, real, working document-level
-metadata additions (`/Lang`, `/DisplayDocTitle`, idempotent `/MarkInfo`+
-`/StructTreeRoot` setup), and the full intended structure-tree/marked-content
-API surface declared but not yet implemented (calling those functions
-returns `HPDF_UA_NOT_YET_IMPLEMENTED` rather than silently doing nothing).
-**No PDF produced by this project is PDF/UA-1 conformant yet** -- that's
-Milestone 1 onward.
+**Milestone 1 done, 2026-09-12.** See `docs/roadmap.md` for the full
+milestone list and `CHANGES.md` for exactly what exists right now. In
+short: real, working document-level metadata (`/Lang`, `/DisplayDocTitle`,
+`/MarkInfo`+`/StructTreeRoot`), a real structure tree and marked-content
+tagging (`HPDF_UA_Context`, `HPDF_UA_BeginStructureElement()`,
+`HPDF_UA_BeginMarkedContent()`, table-header `/Scope`, figure `/Alt`,
+artifact marking), and `demo/tagged_table_demo.c` producing a real tagged
+table verified against the actual standard: **104 of 106 PDF/UA-1 checks
+pass under veraPDF.** Two real, understood gaps remain (no XMP
+`/Metadata` stream yet; the demo's Standard-14 font isn't embedded),
+both deferred to Milestone 4 -- **this project's demos are not yet fully
+PDF/UA-1 conformant**, but "does this pass PDF/UA-1 validation" is now a
+real, mostly-yes answer, not aspirational.
 
 ## Building
 
 ```sh
 cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build
-./build/docmeta_demo        # exercises the real Milestone 0 functions
-./build/tagged_table_demo   # exercises the Milestone 1 stub API surface
+./build/docmeta_demo        # exercises the Milestone 0 document-metadata functions
+./build/tagged_table_demo   # produces a real, PDF/UA-1-checked tagged table
 ```
 
 Unix/Linux and macOS are the supported platforms; on Windows, build under a

@@ -4,6 +4,43 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## 0.2.0 (2026-09-12) -- Milestone 1: structure tree / marked content, veraPDF-validated
+
+- New `HPDF_UA_Context` (`HPDF_UA_NewContext()`/`HPDF_UA_FreeContext()`):
+  an explicit resource handle owning this project's tagging bookkeeping
+  (per-page `/StructParents`/MCID tracking, `/ParentTree`), since libharu's
+  own `HPDF_Doc` struct is not modified by this project and a
+  module-global registry would be unsafe across multiple documents.
+- Real, working: `HPDF_UA_BeginStructureElement()`/`EndStructureElement()`
+  (real `/StructTreeRoot` population), `HPDF_UA_BeginMarkedContent()`/
+  `EndMarkedContent()` (real `BDC`/`EMC` + MCID + `/ParentTree`),
+  `HPDF_UA_SetAlternateText()` (`/Alt`), `HPDF_UA_SetTableHeaderScope()`
+  (`/Scope`) -- the latter two brought forward from their original
+  Milestone 2 slot since they were one-line additions once
+  `HPDF_UA_StructElem` existed.
+- `HPDF_UA_BeginArtifact()`/`HPDF_UA_EndArtifact()`: brought forward from
+  Milestone 4 after `demo/tagged_table_demo.c`'s first real veraPDF run
+  found an actual, present untagged-content failure on its own decorative
+  table border (ISO 14289-1:2014 7.1/3) -- not held for a later milestone
+  once it was a real, not hypothetical, gap.
+- Two real bugs found and fixed via that same veraPDF run (not by
+  inspection): a malformed `/Artifact BDC` (missing the properties operand
+  `BDC` always requires; `BMC` is correct for "no properties"); and
+  `HPDF_UA_EnableTagging()`'s `struct_tree_root` never being
+  `HPDF_Xref_Add()`-registered, which made every top-level
+  `HPDF_UA_BeginStructureElement()` call fail once more than one
+  structure element tried to reference it (libharu marks non-xref
+  objects `HPDF_OTYPE_DIRECT`, "owned by exactly one container," the
+  instant they're first added anywhere, and refuses a second reference).
+- `demo/tagged_table_demo.c` rewritten to produce a real tagged
+  `Document > Table > TR > TH/TD` tree (15 MCIDs). Verified: direct byte
+  inspection, a real `validate/run_verapdf.sh` run (**104/106 PDF/UA-1
+  checks pass**), and `leaks --atExit` (zero leaks).
+- Two real, understood gaps remain, out of this milestone's scope: no
+  XMP `/Metadata` stream yet (ISO 14289-1:2014 7.1/8); Standard-14 fonts
+  (e.g. the demos' Helvetica) are never embedded (ISO 14289-1:2014
+  7.21.4.1/1). Both deferred to Milestone 4 -- see `docs/roadmap.md`.
+
 ## 0.1.0 (2026-09-12) -- project scaffolded
 
 - Vendored libharu 2.4.5 unmodified under `vendor/libharu/` (one release

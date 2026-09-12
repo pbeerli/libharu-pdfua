@@ -25,6 +25,7 @@ add_subdirectory(vendor/libharu EXCLUDE_FROM_ALL)
 # --- this project's own PDF/UA tagging module --------------------------
 add_library(hpdf_ua STATIC
     src/ua/hpdf_ua_docmeta.c
+    src/ua/hpdf_ua_context.c
     src/ua/hpdf_ua_structure.c
 )
 target_include_directories(hpdf_ua
