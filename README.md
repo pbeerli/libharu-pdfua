@@ -26,27 +26,30 @@ target -- see `docs/pdf_ua_requirements.md`.
 
 ## Status
 
-**Milestone 1 done, 2026-09-12.** See `docs/roadmap.md` for the full
-milestone list and `CHANGES.md` for exactly what exists right now. In
-short: real, working document-level metadata (`/Lang`, `/DisplayDocTitle`,
-`/MarkInfo`+`/StructTreeRoot`), a real structure tree and marked-content
-tagging (`HPDF_UA_Context`, `HPDF_UA_BeginStructureElement()`,
-`HPDF_UA_BeginMarkedContent()`, table-header `/Scope`, figure `/Alt`,
-artifact marking), and `demo/tagged_table_demo.c` producing a real tagged
-table verified against the actual standard: **104 of 106 PDF/UA-1 checks
-pass under veraPDF.** Two real, understood gaps remain (no XMP
-`/Metadata` stream yet; the demo's Standard-14 font isn't embedded),
-both deferred to Milestone 4 -- **this project's demos are not yet fully
-PDF/UA-1 conformant**, but "does this pass PDF/UA-1 validation" is now a
-real, mostly-yes answer, not aspirational.
+**Milestones 1 and 2 done, 2026-09-12.** See `docs/roadmap.md` for the
+full milestone list and `CHANGES.md` for exactly what exists right now.
+In short: real, working document-level metadata (`/Lang`,
+`/DisplayDocTitle`, `/MarkInfo`+`/StructTreeRoot`), a real structure tree
+and marked-content tagging (`HPDF_UA_Context`,
+`HPDF_UA_BeginStructureElement()`, `HPDF_UA_BeginMarkedContent()`,
+table-header `/Scope`, figure `/Alt`, artifact marking) that works for
+both text content (`demo/tagged_table_demo.c`) and path-painting content
+like chart bars/axes (`demo/tagged_histogram_demo.c`), both verified
+against the actual standard: **104 of 106 PDF/UA-1 checks pass under
+veraPDF** for each. Two real, understood gaps remain (no XMP `/Metadata`
+stream yet; the demos' Standard-14 font isn't embedded), both deferred to
+Milestone 4 -- **this project's demos are not yet fully PDF/UA-1
+conformant**, but "does this pass PDF/UA-1 validation" is now a real,
+mostly-yes answer, not aspirational.
 
 ## Building
 
 ```sh
 cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build
-./build/docmeta_demo        # exercises the Milestone 0 document-metadata functions
-./build/tagged_table_demo   # produces a real, PDF/UA-1-checked tagged table
+./build/docmeta_demo          # exercises the Milestone 0 document-metadata functions
+./build/tagged_table_demo     # produces a real, PDF/UA-1-checked tagged table
+./build/tagged_histogram_demo # produces a real, PDF/UA-1-checked tagged figure
 ```
 
 Unix/Linux and macOS are the supported platforms; on Windows, build under a

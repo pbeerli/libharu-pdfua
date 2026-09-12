@@ -43,6 +43,9 @@ if(LIBHARU_PDFUA_BUILD_DEMOS)
     add_executable(tagged_table_demo demo/tagged_table_demo.c)
     target_link_libraries(tagged_table_demo PRIVATE hpdf_ua)
 
+    add_executable(tagged_histogram_demo demo/tagged_histogram_demo.c)
+    target_link_libraries(tagged_histogram_demo PRIVATE hpdf_ua)
+
     add_executable(docmeta_demo demo/docmeta_demo.c)
     target_link_libraries(docmeta_demo PRIVATE hpdf_ua)
 endif()

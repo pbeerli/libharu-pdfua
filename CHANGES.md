@@ -4,6 +4,22 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## 0.3.0 (2026-09-12) -- Milestone 2: tagged figure/histogram page
+
+- New `demo/tagged_histogram_demo.c`: a real bar-chart histogram
+  (`Document > Figure`, one marked-content span covering axis + 10 bars +
+  tick labels, real `/Alt` text) plus `Document > Caption` (its own
+  tagged text). Matches Migrate's own `plot_svg.c`
+  `REPORT_FIGURE_HISTOGRAM` renderer shape (one filled rectangle per bin).
+- Confirms `HPDF_UA_BeginMarkedContent()`/`EndMarkedContent()` generalize
+  to path-painting content (`re`/`f`, `m`/`l`/`S`), not just the
+  text-showing content (`BT`/`Tj`/`ET`) Milestone 1's table demo used --
+  no code change needed, they were already content-agnostic.
+- Verified: direct byte inspection, `validate/run_verapdf.sh`
+  (**104/106 PDF/UA-1 checks pass, clean on the first attempt** -- no new
+  failures beyond the same two Milestone-1 gaps), `leaks --atExit` (zero
+  leaks).
+
 ## 0.2.0 (2026-09-12) -- Milestone 1: structure tree / marked content, veraPDF-validated
 
 - New `HPDF_UA_Context` (`HPDF_UA_NewContext()`/`HPDF_UA_FreeContext()`):

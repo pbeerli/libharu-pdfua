@@ -110,16 +110,35 @@ other shared object this project creates.
 
 ## Milestone 2 -- one tagged figure/histogram page
 
-`HPDF_UA_SetAlternateText()` itself is already done (brought forward into
-Milestone 1, see above -- a one-line `/Alt` addition once
-`HPDF_UA_StructElem` existed). What remains:
+**Done and veraPDF-validated, 2026-09-12** (same day as Milestone 1;
+`HPDF_UA_SetAlternateText()` itself had already been brought forward into
+Milestone 1 as a one-line `/Alt` addition). `demo/tagged_histogram_demo.c`
+draws a real bar-chart histogram (matching Migrate's own `plot_svg.c`
+`REPORT_FIGURE_HISTOGRAM` renderer: one filled rectangle per bin) as
+`Document > Figure` (axis + 10 bars + tick labels, all inside one
+marked-content span, with real `/Alt` text describing the chart's actual
+shape/peak) followed by `Document > Caption` (its own separately tagged
+text, not folded into the `/Alt`).
 
-- Exercise the same structure-tree/marked-content machinery from Milestone 1
-  against a bar-chart-style figure (matching Migrate's own
-  `plot_svg.c`-equivalent histogram rendering), not just a table -- confirms
-  the API generalizes rather than being table-shaped only.
-- A real demo (`demo/tagged_histogram_demo.c` or similar), veraPDF-validated
-  the same way Milestone 1's table demo was.
+This milestone's actual point -- confirming the API generalizes beyond
+table cells -- is now empirically confirmed: Milestone 1's marked-content
+machinery had so far only ever wrapped text-showing operators
+(`BT`/`Tj`/`ET`); this demo wraps **path-painting operators** (`re`/`f` for
+each bar, `m`/`l`/`S` for the axis lines) inside `BDC`/`EMC` too, with no
+code change needed to `HPDF_UA_BeginMarkedContent()`/`EndMarkedContent()`
+-- they were already content-agnostic, just writing the same operators
+around whatever the caller draws in between.
+
+Verified the same way as Milestone 1: direct byte inspection (10 `re`/`f`
+pairs with heights correctly proportional to the fake density data, 2
+`BDC`/`EMC`/MCID pairs, `/Alt` present once), a real
+`validate/run_verapdf.sh` run (**104/106 PDF/UA-1 checks pass -- clean
+on the first attempt**, no new failures beyond the same two Milestone-1
+gaps below), and `leaks --atExit` (zero leaks). No new bugs found this
+time -- both real defects Milestone 1 uncovered (the malformed
+`/Artifact BDC`/`BMC` mixup and the un-registered `struct_tree_root`)
+were structural/shared, not table-specific, so fixing them once already
+covered this milestone too.
 
 ## Milestone 3 -- one tagged line/skyline-style plot page
 
