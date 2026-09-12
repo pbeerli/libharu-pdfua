@@ -26,8 +26,13 @@ target -- see `docs/pdf_ua_requirements.md`.
 
 ## Status
 
-**Milestones 1-4 done, 2026-09-12 -- all three tagged demos now pass
-PDF/UA-1 validation outright.** See `docs/roadmap.md` for the full
+**Milestones 1-4 done, Milestone 5 decided, 2026-09-12 -- all three
+tagged demos pass PDF/UA-1 validation outright, and integration into
+Migrate is recommended (as a new, additive `report_pdf_tagged.c`
+backend, not a rewrite of Migrate's existing PDF path) -- see
+`docs/roadmap.md`'s Milestone 5 section for the full reasoning, checked
+directly against Migrate's actual `report_model.c` architecture. Timing
+of that integration work is a separate, still-open scheduling call.** See `docs/roadmap.md` for the full
 milestone list and `CHANGES.md` for exactly what exists right now. Real,
 working: document-level metadata (`/Lang`, `/DisplayDocTitle`,
 `/MarkInfo`+`/StructTreeRoot`, a real XMP `/Metadata` stream declaring

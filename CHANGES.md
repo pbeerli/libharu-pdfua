@@ -4,6 +4,25 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## Milestone 5 (2026-09-12) -- decision recorded, no code change
+
+Decided: the prototype succeeded (106/106 PDF/UA-1 across three genuinely
+different content shapes, zero leaks) -- integrate, but narrowly, as a
+new `report_pdf_tagged.c` backend consuming Migrate's existing
+`report_model.c` object (`report_document_fmt`/`report_section_fmt`),
+not a `pretty.c` rewrite. Checked directly against Migrate's actual
+source: `report_model.h` already declares itself backend-agnostic
+("HTML/PDF are meant to reuse the same document unchanged later"),
+already carries an `alt_text` field on every figure, and its
+`report_figure_kind_t` (`HISTOGRAM`/`LINE_SERIES`) matches this project's
+Milestone 2/3 shapes exactly. Real remaining gap identified precisely:
+page-layout logic (genuinely new work) and confidence-band
+(`y_err`) rendering (not yet exercised by any demo here) -- not "one
+implementation per table type," since all 16 of Migrate's table builders
+already share one generic shape. Scheduling this integration against
+Migrate's other priorities is an explicitly open call, not decided here
+-- see `plan.md`. Full writeup in `docs/roadmap.md`.
+
 ## 0.5.0 (2026-09-12) -- Milestone 4: outline, tabs, metadata, embedded fonts -- full PDF/UA-1 conformance
 
 - New `HPDF_UA_AddMetadata()`: a minimal, purpose-built XMP `/Metadata`

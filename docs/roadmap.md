@@ -240,12 +240,88 @@ and `leaks --atExit` on each (zero leaks, all three).
 
 ## Milestone 5 -- decide
 
-Per the original plan's own framing: "If the prototype validates and remains
-maintainable, Migrate can vendor the layer, use it as a submodule, or import
-the small API as a local PDF backend. If it fails, Migrate can still keep
-Markdown/SVG output without carrying a half-working PDF/UA implementation."
-Revisit at this point, with three real validated prototypes (table, figure,
-plot) in hand, not before.
+**Decided 2026-09-12: the prototype succeeded (it's the first branch of
+the original either/or, not the second) -- integrate, but narrowly, as a
+new additive backend, not a `pretty.c` rewrite. Timing/scheduling of the
+actual integration work is a separate, still-open call, not decided here.**
+
+The original framing ("if it fails, keep Markdown/SVG without carrying a
+half-working implementation") assumed failure was a live possibility.
+It wasn't, by the time this milestone was reached: three genuinely
+different content shapes (table, bar-chart figure, multi-series line
+plot), all independently veraPDF-validated to full PDF/UA-1 conformance
+(106/106), zero memory leaks. So the real question at this milestone
+turned out to be *how* to integrate, not *whether* the prototype earned
+it.
+
+**Checked directly against Migrate's actual source, not assumed:**
+Migrate's Phase 5 report work already built exactly the right seam for
+this, apparently without knowing it would matter this precisely later.
+`report_model.h`'s own top comment: *"a generic document made of tables
+and figures, with no knowledge of MCMC/Bayesian specifics and no
+knowledge of any particular output backend (Markdown/SVG today; HTML/PDF
+are meant to reuse the same document unchanged later)."* Its
+`report_figure_fmt` already carries a 256-byte `alt_text` field --
+accessibility text was already a first-class part of the model before
+this project existed, mapping directly onto
+`HPDF_UA_SetAlternateText()`. Its `report_figure_kind_t` is exactly
+`{HISTOGRAM, LINE_SERIES}` -- precisely this project's Milestone 2 and
+Milestone 3 shapes. And `report_markdown.c` (the existing Markdown
+backend) is a genuinely small, generic ~35-line walker over
+`report_document_fmt`'s sections, dispatching once on
+`section->kind == TABLE` vs. `FIGURE` -- a real, working precedent for
+exactly the size and shape a `report_pdf_tagged.c` counterpart would
+need, not a hypothetical one.
+
+**What this means concretely, if/when this integration is scheduled:**
+
+- A new file, `report_pdf_tagged.c` (matching this project's `core/report/`
+  target module map's already-reserved `report_pdf_haru.c` slot almost
+  exactly), walking the *same* `report_document_fmt` object every other
+  backend already consumes -- no changes needed to `report_model.c`
+  itself, or to any of the 16 `report_add_*_table`/`report_add_*_figure`
+  builder functions, or to `generate_markdown_report_prototype()` beyond
+  one added call once the new writer exists.
+- `pretty.c` (the current, legacy, actually-shipped Haru PDF path) is not
+  touched at all -- this is a genuinely new, additive output option,
+  exactly mirroring how the Markdown/SVG report itself was added
+  alongside the legacy PDF without disturbing it.
+- Vendor this project's `hpdf_ua` module (`include/hpdf_ua/`, `src/ua/`)
+  directly into `source/migrate-codex-7/`, linking against Migrate's
+  *own already-vendored* libharu copy (`lib/haru`) rather than adding a
+  second, redundant one -- the module was deliberately built using only
+  libharu's public/semi-public headers for exactly this kind of reuse.
+- **The real remaining engineering gap is narrower than "port every
+  report type" might suggest, and is concentrated in two places, not
+  spread across all 16 table/figure builders**: every table already
+  shares one generic shape (`report_table_fmt`: column names + a cells
+  grid) regardless of which builder produced it, so one table-rendering
+  routine (mirroring `write_table_section()`) covers all 16, the same
+  way it already does for Markdown. The two real open pieces are (1)
+  **page layout** -- deciding where each section lands on which page,
+  when to start a new one, margins/font sizing -- something no existing
+  backend needs (Markdown flows; SVG figures are self-contained), so
+  this is genuinely new work, not a port; and (2) **confidence-band
+  rendering** -- `report_figure_series_fmt.y_err` (an optional per-point
+  error-band half-width) was never exercised by this project's own
+  Milestone 3 skyline demo, which deliberately used two plain series
+  with no bands, so that drawing case (a filled band or paired
+  offset lines) still needs a first real implementation.
+- Two real, unresolved decisions of Migrate's own making, not this
+  project's to answer alone: whether a fully tagged PDF is meant to
+  *replace* `pretty.c`'s output eventually, or exist permanently
+  alongside it as a third format (next to Markdown and the legacy PDF);
+  and whether Phase 5.5's still-open report-graphics-quality gap (the
+  user's own "my PDF plotting looks 100x better than your .md -> PDF"
+  reaction) should be resolved on `plot_svg.c` first, since a
+  `report_pdf_tagged.c` backend would likely reuse or closely mirror
+  whatever plotting primitives that work settles on.
+
+**Not decided here, deliberately**: *when* to schedule this integration
+work against Migrate's other active priorities (Phase 6 performance,
+Phase 7 refactoring). That is a real scope/timing call for Migrate's own
+project owner, recorded as explicitly open in `plan.md`, not assumed
+either way by this side project.
 
 ## Research findings (2026-09-12) that inform this roadmap
 
