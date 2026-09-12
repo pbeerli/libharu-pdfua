@@ -186,20 +186,57 @@ new.
 
 ## Milestone 4 -- outline/bookmarks, document-level polish
 
-`HPDF_UA_BeginArtifact()`/`HPDF_UA_EndArtifact()` are already done (brought
-forward into Milestone 1, see above -- a real veraPDF failure on
-Milestone 1's own demo made this a present, not hypothetical, need). What
-remains:
+**Done and veraPDF-validated, 2026-09-12** (same day as Milestones 1-3;
+`HPDF_UA_BeginArtifact()`/`HPDF_UA_EndArtifact()` had already been brought
+forward into Milestone 1). **All three tagged demos now pass PDF/UA-1
+validation outright -- 106/106 checks, veraPDF prints `PASS`, not just
+"fewer failures."** This closes the two real gaps every demo through
+Milestone 3 had:
 
-- Tie `HPDF_CreateOutline()`'s existing bookmark mechanism to real structure
-  elements (a PDF/UA requirement libharu's existing outline support doesn't
-  yet satisfy on its own).
-- `/Tabs /S` on every page.
-- The two real gaps Milestone 1's veraPDF run found but left unfixed
-  (XMP `/Metadata` stream; embedded fonts) belong here too, alongside
-  `HPDF_UA_SetTableDataHeaders()` (`/Headers`, for irregular tables --
-  still stubbed, `/Scope` covers Migrate's actual simple-table needs so
-  far).
+- **XMP `/Metadata` stream**: `HPDF_UA_AddMetadata()`, a new, minimal,
+  purpose-built XMP writer (not a reuse of libharu's own PDF/A
+  `HPDF_PDFA_AddXmpMetadata()`, which would have unconditionally
+  recreated `/MarkInfo`/`/StructTreeRoot` and collided with this
+  project's already-tagged tree). Writes `dc:title` (from the document's
+  existing `/Title`) and declares PDF/UA-1 conformance
+  (`pdfuaid:part=1`) -- real, working, idempotent.
+- **Embedded fonts**: vendored `fonts/DejaVuSans.ttf` (DejaVu fonts
+  license, based on Bitstream Vera -- explicitly permissive and intended
+  for redistribution; `fonts/DejaVuSans-LICENSE.txt` included) in place
+  of the Standard-14 Helvetica every demo used through Milestone 3. All
+  three demos now load it via `HPDF_LoadTTFontFromFile(pdf, ..., HPDF_TRUE)`.
+
+Also done, per the roadmap's original scope:
+
+- **`/Tabs /S` on every tagged page**: made automatic, not a separate call
+  -- baked into `hpdf_ua_find_or_create_page_entry()` (the same internal
+  helper `HPDF_UA_BeginMarkedContent()`/`HPDF_UA_BeginArtifact()` already
+  use to register a page's first use), so every page any of this
+  project's tagging functions ever touch gets it for free.
+- **Document outline tied to real content**: each of the three demos now
+  creates a real `HPDF_CreateOutline()` entry (e.g. "Table", "Histogram",
+  "Skyline plot") with a real page destination
+  (`HPDF_Page_CreateDestination()`/`HPDF_Destination_SetXYZ()`). One real
+  limitation, documented rather than solved: libharu's outline API (like
+  the base PDF outline model itself) is page/destination-based, not
+  structure-element-based -- there is no PDF-standard mechanism to point
+  an outline entry directly at a `/StructElem` object, so this ties each
+  entry to the closest real thing available, the actual page the content
+  lives on, not a deeper structural link.
+
+**Not done, deliberately out of this pass's scope** (not requested this
+round): `HPDF_UA_SetTableDataHeaders()` (`/Headers`, for irregular
+tables) remains stubbed -- `/Scope` already covers this project's actual
+simple-table needs, and no consumer has needed irregular-table support
+yet.
+
+Verified the same way as every prior milestone, now with a stronger bar:
+direct byte inspection (`/Outlines`, `/Metadata`+`pdfuaid`, `FontFile2`+
+`DejaVuSans`, `/Tabs` all present and correct across all three demos), a
+clean rebuild from scratch, a real `validate/run_verapdf.sh` run on each
+demo (**106/106 PDF/UA-1 checks pass -- veraPDF's own text-format output
+now prints the literal word `PASS`, not just a lower failure count**),
+and `leaks --atExit` on each (zero leaks, all three).
 
 ## Milestone 5 -- decide
 

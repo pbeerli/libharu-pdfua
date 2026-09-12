@@ -27,6 +27,7 @@ add_library(hpdf_ua STATIC
     src/ua/hpdf_ua_docmeta.c
     src/ua/hpdf_ua_context.c
     src/ua/hpdf_ua_structure.c
+    src/ua/hpdf_ua_metadata.c
 )
 target_include_directories(hpdf_ua
     PUBLIC
@@ -40,14 +41,24 @@ target_link_libraries(hpdf_ua PUBLIC hpdf)
 # --- demos --------------------------------------------------------------
 option(LIBHARU_PDFUA_BUILD_DEMOS "Build the tagged-PDF demo programs" ON)
 if(LIBHARU_PDFUA_BUILD_DEMOS)
+    # Absolute path to the vendored embeddable demo font (Milestone 4), so
+    # each demo can load it regardless of the process's working directory.
+    set(HPDF_UA_DEMO_FONT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/fonts/DejaVuSans.ttf")
+
     add_executable(tagged_table_demo demo/tagged_table_demo.c)
     target_link_libraries(tagged_table_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_table_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
 
     add_executable(tagged_histogram_demo demo/tagged_histogram_demo.c)
     target_link_libraries(tagged_histogram_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_histogram_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
 
     add_executable(tagged_skyline_demo demo/tagged_skyline_demo.c)
     target_link_libraries(tagged_skyline_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_skyline_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
 
     add_executable(docmeta_demo demo/docmeta_demo.c)
     target_link_libraries(docmeta_demo PRIVATE hpdf_ua)

@@ -55,6 +55,7 @@ main (void)
     HPDF_Doc pdf;
     HPDF_Page page;
     HPDF_Font font;
+    const char *font_name;
     HPDF_UA_Context ctx;
     HPDF_UA_StructElem doc_elem, table_elem, tr_elem, cell_elem;
     int row, col;
@@ -74,6 +75,16 @@ main (void)
     HPDF_UA_SetDocumentLanguage (pdf, "en-US");
     HPDF_UA_SetDisplayDocTitle (pdf, HPDF_TRUE);
 
+    /* Milestone 4: a real XMP metadata stream -- without this, veraPDF's
+     * ISO 14289-1:2014 7.1/8 fails regardless of how well the content is
+     * tagged (confirmed on every demo through Milestone 3). */
+    status = HPDF_UA_AddMetadata (pdf);
+    if (status != HPDF_OK) {
+        fprintf (stderr, "HPDF_UA_AddMetadata failed\n");
+        HPDF_Free (pdf);
+        return 1;
+    }
+
     ctx = HPDF_UA_NewContext (pdf);
     if (!ctx) {
         fprintf (stderr, "HPDF_UA_NewContext failed\n");
@@ -83,8 +94,35 @@ main (void)
 
     page = HPDF_AddPage (pdf);
     HPDF_Page_SetSize (page, HPDF_PAGE_SIZE_LETTER, HPDF_PAGE_PORTRAIT);
-    font = HPDF_GetFont (pdf, "Helvetica", NULL);
+
+    /* Milestone 4: an embedded font (DejaVu Sans, see fonts/DejaVuSans-
+     * LICENSE.txt) instead of the Standard-14 Helvetica this demo used
+     * through Milestone 3 -- Standard-14 fonts are never embedded by PDF
+     * convention, which is exactly what veraPDF's ISO 14289-1:2014
+     * 7.21.4.1/1 flagged. */
+    font_name = HPDF_LoadTTFontFromFile (pdf, HPDF_UA_DEMO_FONT_PATH, HPDF_TRUE);
+    if (!font_name) {
+        fprintf (stderr, "HPDF_LoadTTFontFromFile failed\n");
+        HPDF_Free (pdf);
+        return 1;
+    }
+    font = HPDF_GetFont (pdf, font_name, "WinAnsiEncoding");
     HPDF_Page_SetFontAndSize (page, font, 10);
+
+    /* Milestone 4: a document outline entry pointing at this page, tied
+     * to real content the way the roadmap's "outline/bookmarks" item
+     * asked for -- libharu's outline API is destination-based (a page +
+     * a view position), not structure-element-based; there is no
+     * PDF-standard way to point an outline entry directly at a
+     * /StructElem object, so this ties it to the closest real thing
+     * libharu supports: the actual page this content lives on. */
+    {
+        HPDF_Outline outline = HPDF_CreateOutline (pdf, NULL, "Table", NULL);
+        HPDF_Destination dst = HPDF_Page_CreateDestination (page);
+
+        HPDF_Destination_SetXYZ (dst, 0, HPDF_Page_GetHeight (page), 1);
+        HPDF_Outline_SetDestination (outline, dst);
+    }
 
     doc_elem = HPDF_UA_BeginStructureElement (ctx, NULL, HPDF_UA_ROLE_DOCUMENT);
     table_elem = HPDF_UA_BeginStructureElement (ctx, doc_elem, HPDF_UA_ROLE_TABLE);

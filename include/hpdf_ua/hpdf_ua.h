@@ -54,6 +54,21 @@ HPDF_UA_SetDisplayDocTitle (HPDF_Doc pdf, HPDF_BOOL value);
 HPDF_EXPORT(HPDF_STATUS)
 HPDF_UA_EnableTagging (HPDF_Doc pdf);
 
+/* REAL, Milestone 4. Adds a minimal XMP metadata stream to the document
+ * catalog (/Metadata, /Type /Metadata /Subtype /XML) declaring PDF/UA-1
+ * conformance (pdfuaid:part 1) and, if set, the document's dc:title from
+ * HPDF_SetInfoAttr(pdf, HPDF_INFO_TITLE, ...). Idempotent -- does nothing
+ * if a /Metadata entry already exists. Deliberately a separate, minimal
+ * writer rather than a reuse of libharu's own PDF/A
+ * HPDF_PDFA_AddXmpMetadata(): that function also (re)creates its own
+ * /MarkInfo and /StructTreeRoot unconditionally, which would collide with
+ * HPDF_UA_EnableTagging()'s already-tagged, non-empty tree if called
+ * afterward. Confirmed by a real veraPDF failure (ISO 14289-1:2014
+ * 7.1/8) on every demo through Milestone 3 -- none had any /Metadata
+ * stream at all. */
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_AddMetadata (HPDF_Doc pdf);
+
 /* ---------------------------------------------------------------------
  * Milestone 1: structure tree / marked content. Everything below is
  * scoped to an explicit HPDF_UA_Context rather than the bare HPDF_Doc --
@@ -73,7 +88,11 @@ typedef struct _HPDF_UA_Context_Rec *HPDF_UA_Context;
 /* REAL. Creates a tagging context for `pdf`, calling HPDF_UA_EnableTagging()
  * internally and additionally setting up /ParentTree. Create exactly one
  * context per document you want to tag, before calling any other
- * Milestone 1 function on it. */
+ * Milestone 1 function on it. Every page this context ever tags (the
+ * first time HPDF_UA_BeginMarkedContent()/HPDF_UA_BeginArtifact() touches
+ * it) automatically also gets /Tabs /S set (Milestone 4) -- tab order
+ * follows structure order, a real PDF/UA-1 requirement -- with no
+ * separate call needed. */
 HPDF_EXPORT(HPDF_UA_Context)
 HPDF_UA_NewContext (HPDF_Doc pdf);
 

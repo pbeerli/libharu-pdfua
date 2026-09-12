@@ -26,24 +26,23 @@ target -- see `docs/pdf_ua_requirements.md`.
 
 ## Status
 
-**Milestones 1-3 done, 2026-09-12.** See `docs/roadmap.md` for the full
-milestone list and `CHANGES.md` for exactly what exists right now. In
-short: real, working document-level metadata (`/Lang`, `/DisplayDocTitle`,
-`/MarkInfo`+`/StructTreeRoot`), a real structure tree and marked-content
-tagging (`HPDF_UA_Context`, `HPDF_UA_BeginStructureElement()`,
+**Milestones 1-4 done, 2026-09-12 -- all three tagged demos now pass
+PDF/UA-1 validation outright.** See `docs/roadmap.md` for the full
+milestone list and `CHANGES.md` for exactly what exists right now. Real,
+working: document-level metadata (`/Lang`, `/DisplayDocTitle`,
+`/MarkInfo`+`/StructTreeRoot`, a real XMP `/Metadata` stream declaring
+PDF/UA-1 conformance), a real structure tree and marked-content tagging
+(`HPDF_UA_Context`, `HPDF_UA_BeginStructureElement()`,
 `HPDF_UA_BeginMarkedContent()`, table-header `/Scope`, figure `/Alt`,
-artifact marking) that works for text content
+artifact marking, automatic `/Tabs /S`), a real document outline tied to
+each demo's actual page, and an embedded font (DejaVu Sans) in place of
+never-embedded Standard-14 Helvetica. Works for text content
 (`demo/tagged_table_demo.c`), path-painting content like chart bars/axes
 (`demo/tagged_histogram_demo.c`), and multi-series polylines/dashed
 strokes with a real reading-order decision for legend text
-(`demo/tagged_skyline_demo.c`) -- all three verified against the actual
-standard: **104 of 106 PDF/UA-1 checks pass under veraPDF** for each,
-clean on the first attempt for the second and third demos. Two real,
-understood gaps remain (no XMP `/Metadata` stream yet; the demos'
-Standard-14 font isn't embedded), both deferred to Milestone 4 -- **this
-project's demos are not yet fully PDF/UA-1 conformant**, but "does this
-pass PDF/UA-1 validation" is now a real, mostly-yes answer, not
-aspirational.
+(`demo/tagged_skyline_demo.c`). **All three now score 106 of 106 PDF/UA-1
+checks under veraPDF -- `verapdf --format text` prints the literal word
+`PASS`, not just a lower failure count.**
 
 ## Building
 
@@ -77,6 +76,9 @@ published `verapdf/cli` image automatically). See
 - `vendor/libharu/` -- libharu 2.4.5, unmodified (see `NOTICE.md`).
 - `include/hpdf_ua/`, `src/ua/` -- this project's own additions.
 - `demo/` -- demo programs, one per roadmap milestone's target output.
+- `fonts/` -- an embeddable demo font (DejaVu Sans; see its own
+  `DejaVuSans-LICENSE.txt`), used by the demos so their output PDFs pass
+  PDF/UA-1's embedded-fonts requirement.
 - `validate/` -- veraPDF wrapper script.
 - `docs/` -- the PDF/UA-1 requirements checklist and the roadmap.
 - `tests/` -- placeholder; real CTest wiring lands with Milestone 1.

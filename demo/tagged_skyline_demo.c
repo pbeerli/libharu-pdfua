@@ -62,6 +62,7 @@ main (void)
     HPDF_Doc pdf;
     HPDF_Page page;
     HPDF_Font font;
+    const char *font_name;
     HPDF_UA_Context ctx;
     HPDF_UA_StructElem doc_elem, figure_elem, caption_elem;
     HPDF_UA_StructElem legend1_elem, legend2_elem;
@@ -89,6 +90,16 @@ main (void)
     HPDF_UA_SetDocumentLanguage (pdf, "en-US");
     HPDF_UA_SetDisplayDocTitle (pdf, HPDF_TRUE);
 
+    /* Milestone 4: real XMP metadata (see tagged_table_demo.c's comment
+     * on HPDF_UA_AddMetadata() for why this is separate from libharu's
+     * own PDF/A path). */
+    status = HPDF_UA_AddMetadata (pdf);
+    if (status != HPDF_OK) {
+        fprintf (stderr, "HPDF_UA_AddMetadata failed\n");
+        HPDF_Free (pdf);
+        return 1;
+    }
+
     ctx = HPDF_UA_NewContext (pdf);
     if (!ctx) {
         fprintf (stderr, "HPDF_UA_NewContext failed\n");
@@ -98,7 +109,24 @@ main (void)
 
     page = HPDF_AddPage (pdf);
     HPDF_Page_SetSize (page, HPDF_PAGE_SIZE_LETTER, HPDF_PAGE_PORTRAIT);
-    font = HPDF_GetFont (pdf, "Helvetica", NULL);
+
+    /* Milestone 4: an embedded font (see tagged_table_demo.c's comment). */
+    font_name = HPDF_LoadTTFontFromFile (pdf, HPDF_UA_DEMO_FONT_PATH, HPDF_TRUE);
+    if (!font_name) {
+        fprintf (stderr, "HPDF_LoadTTFontFromFile failed\n");
+        HPDF_Free (pdf);
+        return 1;
+    }
+    font = HPDF_GetFont (pdf, font_name, "WinAnsiEncoding");
+
+    /* Milestone 4: a document outline entry pointing at this page. */
+    {
+        HPDF_Outline outline = HPDF_CreateOutline (pdf, NULL, "Skyline plot", NULL);
+        HPDF_Destination dst = HPDF_Page_CreateDestination (page);
+
+        HPDF_Destination_SetXYZ (dst, 0, HPDF_Page_GetHeight (page), 1);
+        HPDF_Outline_SetDestination (outline, dst);
+    }
 
     doc_elem = HPDF_UA_BeginStructureElement (ctx, NULL, HPDF_UA_ROLE_DOCUMENT);
     if (!doc_elem)

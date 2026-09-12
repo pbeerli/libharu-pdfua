@@ -139,6 +139,13 @@ hpdf_ua_find_or_create_page_entry (HPDF_UA_Context ctx, HPDF_Page page)
     if (HPDF_Dict_AddNumber (page, "StructParents", key) != HPDF_OK)
         return NULL;
 
+    /* /Tabs /S (Milestone 4): tab/reading order on this page follows
+     * structure order -- a real PDF/UA-1 requirement, set automatically
+     * here rather than left to each caller to remember for every page it
+     * tags. */
+    if (HPDF_Dict_AddName (page, "Tabs", "S") != HPDF_OK)
+        return NULL;
+
     mcid_refs = HPDF_Array_New (ctx->pdf->mmgr);
     if (!mcid_refs)
         return NULL;

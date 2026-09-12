@@ -4,6 +4,35 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## 0.5.0 (2026-09-12) -- Milestone 4: outline, tabs, metadata, embedded fonts -- full PDF/UA-1 conformance
+
+- New `HPDF_UA_AddMetadata()`: a minimal, purpose-built XMP `/Metadata`
+  stream writer (`dc:title` + `pdfuaid:part=1`), deliberately not a reuse
+  of libharu's own PDF/A `HPDF_PDFA_AddXmpMetadata()` (which would
+  unconditionally recreate `/MarkInfo`/`/StructTreeRoot` and collide with
+  this project's already-tagged tree). Fixes ISO 14289-1:2014 7.1/8.
+- `/Tabs /S` now set automatically on every page any tagging call
+  touches, baked into the shared `hpdf_ua_find_or_create_page_entry()`
+  helper -- no separate call needed, applies to all three demos for free.
+- Vendored `fonts/DejaVuSans.ttf` (+ `fonts/DejaVuSans-LICENSE.txt`,
+  DejaVu fonts license, permissive/redistributable) and switched all
+  three tagged demos from Standard-14 Helvetica to this embedded font via
+  `HPDF_LoadTTFontFromFile(..., HPDF_TRUE)`. Fixes ISO 14289-1:2014
+  7.21.4.1/1.
+- All three demos now create a real `HPDF_CreateOutline()` entry with a
+  real page destination ("Table", "Histogram", "Skyline plot") -- tied to
+  the actual page the content lives on, since libharu's (and base PDF's)
+  outline model has no way to reference a `/StructElem` object directly.
+- **Result: all three tagged demos now pass PDF/UA-1 validation outright
+  -- 106/106 checks, veraPDF's `--format text` output prints the literal
+  word `PASS`, not just a lower failure count.** Verified via a clean
+  rebuild from scratch, direct byte inspection (`/Outlines`,
+  `/Metadata`+`pdfuaid`, `FontFile2`+`DejaVuSans`, `/Tabs` all present),
+  and `leaks --atExit` on each (zero leaks).
+- `HPDF_UA_SetTableDataHeaders()` (`/Headers`, irregular tables) remains
+  the one deliberately-out-of-scope stub -- `/Scope` covers this
+  project's actual simple-table needs, no consumer has needed it yet.
+
 ## 0.4.0 (2026-09-12) -- Milestone 3: tagged skyline/multi-series plot page
 
 - New `demo/tagged_skyline_demo.c`: a two-population "Theta through time"

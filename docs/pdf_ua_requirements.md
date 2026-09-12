@@ -148,11 +148,15 @@ Confirmed directly against the vendored source under `vendor/libharu/`:
 | Table header association: `/Scope` | Real, working (`HPDF_UA_SetTableHeaderScope()`) |
 | Table header association: `/Headers` (irregular tables) | Still a stub (`HPDF_UA_SetTableDataHeaders()`) -- `/Scope` covers this project's actual simple-table needs so far |
 | Artifacts (`/Artifact` `BMC`/`EMC`) | Real, working (`HPDF_UA_BeginArtifact()`/`EndArtifact()`) -- brought forward from Milestone 4 after a real veraPDF failure |
-| Outline/bookmarks | libharu's own `HPDF_CreateOutline` exists, not yet tied to structure elements -- Milestone 4 |
-| XMP `/Metadata` stream | Still absent -- confirmed by a real veraPDF failure (ISO 14289-1:2014 7.1/8), fix deferred to Milestone 4 (see roadmap for why reusing libharu's PDF/A `HPDF_PDFA_AddXmpMetadata()` isn't a drop-in fix) |
-| Embedded fonts | Still absent for Standard-14 fonts like the demos' Helvetica -- confirmed by a real veraPDF failure (ISO 14289-1:2014 7.21.4.1/1), a font-provisioning task for whichever real consumer needs it, deferred to Milestone 4 |
+| `/Tabs /S` (tab/reading order) | Real, working -- automatic on every page any tagging call touches (`hpdf_ua_find_or_create_page_entry()`), Milestone 4 |
+| Outline/bookmarks | Real, working (each demo now calls `HPDF_CreateOutline()` + a real page destination) -- Milestone 4. One documented limitation: libharu's outline model (like base PDF) is page/destination-based, not structure-element-based; there is no PDF-standard way to point an outline entry directly at a `/StructElem` object |
+| XMP `/Metadata` stream | Real, working (`HPDF_UA_AddMetadata()`, a minimal purpose-built writer -- not a reuse of libharu's PDF/A `HPDF_PDFA_AddXmpMetadata()`, which would collide with this project's already-tagged tree) -- `dc:title` + `pdfuaid:part=1`, Milestone 4 |
+| Embedded fonts | Real, working -- `fonts/DejaVuSans.ttf` (DejaVu fonts license, permissive/redistributable) loaded via `HPDF_LoadTTFontFromFile(..., HPDF_TRUE)` in place of Standard-14 Helvetica -- Milestone 4 |
 
 First real, end-to-end veraPDF run (2026-09-12, `demo/tagged_table_demo.c`,
-`--flavour ua1`): **104 of 106 checks pass**, both remaining failures are
-the two rows above, neither related to structure-tree/marked-content
-tagging itself.
+`--flavour ua1`): 104 of 106 checks passed at Milestone 1; both remaining
+failures (the metadata and font rows above) were exactly the two gaps
+Milestone 4 closed. **As of Milestone 4, all three tagged demos
+(`tagged_table_demo`, `tagged_histogram_demo`, `tagged_skyline_demo`)
+pass PDF/UA-1 validation outright -- 106/106 checks, veraPDF's
+`--format text` output prints the literal word `PASS`.**
