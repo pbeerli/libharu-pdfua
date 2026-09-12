@@ -142,12 +142,47 @@ covered this milestone too.
 
 ## Milestone 3 -- one tagged line/skyline-style plot page
 
-- Same as Milestone 2, for a multi-series line plot with axes/legend/
-  captions -- the shape Migrate's skyline figures need. Confirms axis labels,
-  legends, and captions all have a sensible structure-element home (this is
-  the point where the role map likely needs `Caption`, and where reading
-  order across multiple overlaid series needs a real decision, not just
-  "whatever order the code happens to draw them in").
+**Done and veraPDF-validated, 2026-09-12** (same day as Milestones 1-2;
+`Caption` had already entered the role map in Milestone 2, ahead of this
+milestone's original expectation that it would be needed here first).
+`demo/tagged_skyline_demo.c` draws a two-population "Theta through time"
+line plot (`Document > Figure`: axes, two color/dash-distinguished
+polylines, and decorative legend swatches, all in one marked-content span
+with rich `/Alt` text describing both series' trends) followed by two
+`Document > P` elements (the first real use of the `P` role in this
+project) for the legend's text labels, and finally `Document > Caption`.
+
+New content shapes exercised beyond Milestones 1-2: **polylines**
+(`moveto`/`lineto` chains, not single closed rectangles) as the plotted
+data itself, and a **dashed stroke** (`HPDF_Page_SetDash()`) distinguishing
+the two series without relying on color alone. `HPDF_UA_BeginMarkedContent()`/
+`EndMarkedContent()` needed no changes for either -- confirms, for the
+second milestone in a row, that they are genuinely content-agnostic.
+
+**The real reading-order decision this milestone was scoped to explore**:
+rather than fold the legend's text labels into the Figure's own `/Alt`
+(as Milestone 2 did for axis meaning) or leave them implicit in whatever
+order drawing code happened to touch them, they are pulled out as
+separate, real `P` structure elements, placed as `Document` children
+**after** the Figure in a fixed order matching their top-to-bottom visual
+position next to the legend swatches -- a deliberate choice, not an
+accident of call order (since this project's design links tree order to
+`HPDF_UA_BeginStructureElement()` call order, the caller controls it
+directly). Axis titles ("Theta"/"Time") stayed folded into the Figure's
+`/Alt` text, a legitimate alternative pattern, kept different from the
+legend case deliberately so this demo exercises both approaches rather
+than picking one uniformly.
+
+Verified the same way as Milestones 1-2: direct byte inspection (4
+`BDC`/`EMC`/`MCID` pairs -- Figure, two `P`s, Caption -- correct dash-array
+tokens on Population 2's line and its legend swatch, solid reset
+afterward), a real `validate/run_verapdf.sh` run (**104/106 PDF/UA-1
+checks pass, clean on the first attempt** -- same two known gaps, no new
+ones), and `leaks --atExit` (zero leaks). Three real demos in a row now
+building clean on the first veraPDF attempt confirms the two bugs found
+during Milestone 1 were the only structural defects in the shared
+machinery -- new content shapes exercise it without surfacing anything
+new.
 
 ## Milestone 4 -- outline/bookmarks, document-level polish
 

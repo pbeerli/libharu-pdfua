@@ -4,6 +4,28 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## 0.4.0 (2026-09-12) -- Milestone 3: tagged skyline/multi-series plot page
+
+- New `demo/tagged_skyline_demo.c`: a two-population "Theta through time"
+  line plot -- `Document > Figure` (axes, two color/dash-distinguished
+  polylines, decorative legend swatches, one marked-content span, rich
+  `/Alt` text) followed by two `Document > P` elements (first real use of
+  the `P` role) for the legend's text labels, then `Document > Caption`.
+- New content shapes: polylines (`moveto`/`lineto` chains) and a dashed
+  stroke (`HPDF_Page_SetDash()`) -- no changes needed to
+  `HPDF_UA_BeginMarkedContent()`/`EndMarkedContent()`, confirming again
+  they are content-agnostic.
+- Explores the milestone's real design question: a deliberate
+  reading-order decision (legend labels pulled out as separate `P`
+  elements after the Figure, in a fixed order matching their visual
+  position) rather than folding them into `/Alt` or leaving order
+  implicit -- contrasted deliberately with axis titles, which stayed in
+  `/Alt`, so this demo exercises both patterns.
+- Verified: direct byte inspection, `validate/run_verapdf.sh`
+  (**104/106 PDF/UA-1 checks pass, clean on the first attempt** -- same
+  two known gaps, no new ones), `leaks --atExit` (zero leaks). Third demo
+  in a row clean on first attempt.
+
 ## 0.3.0 (2026-09-12) -- Milestone 2: tagged figure/histogram page
 
 - New `demo/tagged_histogram_demo.c`: a real bar-chart histogram
