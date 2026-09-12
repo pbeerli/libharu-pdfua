@@ -60,6 +60,11 @@ if(LIBHARU_PDFUA_BUILD_DEMOS)
     target_compile_definitions(tagged_skyline_demo PRIVATE
         HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
 
+    add_executable(tagged_example_demo demo/tagged_example_demo.c)
+    target_link_libraries(tagged_example_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_example_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
+
     add_executable(docmeta_demo demo/docmeta_demo.c)
     target_link_libraries(docmeta_demo PRIVATE hpdf_ua)
 endif()

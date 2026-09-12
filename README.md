@@ -58,6 +58,7 @@ cmake --build build
 ./build/tagged_table_demo     # produces a real, PDF/UA-1-checked tagged table
 ./build/tagged_histogram_demo # produces a real, PDF/UA-1-checked tagged figure
 ./build/tagged_skyline_demo   # produces a real, PDF/UA-1-checked multi-series plot
+./build/tagged_example_demo   # text + table + figure together, one document
 ```
 
 Unix/Linux and macOS are the supported platforms; on Windows, build under a

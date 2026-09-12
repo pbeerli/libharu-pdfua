@@ -4,6 +4,20 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## 0.5.1 (2026-09-12) -- combined text+table+figure example
+
+New `demo/tagged_example_demo.c`: a single document mixing ordinary
+paragraph text (H1 + P, using `HPDF_Page_TextRect()` for real word-wrapped
+body text -- the per-shape demos through Milestone 3 only ever used
+single-line `HPDF_Page_ShowText()`), a table, and a figure together under
+one shared `Document` root, plus a real multi-entry outline -- the one
+combination the earlier, single-shape demos never tested together. Uses
+the full Milestone 4 recipe (real metadata, embedded font, outline) from
+the start. **Result: 106/106 PDF/UA-1 checks, veraPDF prints `PASS`, on
+the first attempt** (1063/1063 individual checks); `leaks --atExit`
+clean. Confirms the shared tagging machinery composes correctly across
+mixed content types on one page/document, not just one shape at a time.
+
 ## Milestone 5 (2026-09-12) -- decision recorded, no code change
 
 Decided: the prototype succeeded (106/106 PDF/UA-1 across three genuinely
