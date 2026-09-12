@@ -377,3 +377,35 @@ either way by this side project.
 - Windows (MSVC) as a native target -- Unix/Linux/macOS, and Windows only via
   a POSIX-compatible layer (WSL/Cygwin/MSYS2), matching Migrate's own current
   platform decision.
+
+## Milestone 6 -- toward a public release (recorded 2026-09-12, not started)
+
+Per the user's stated intent: once this project is further along, make it a
+public GitHub repository so others can use the library.
+
+Two concrete prerequisites the user specifically named, neither started yet:
+
+- **More test coverage of libharu's own original functionality**, not just
+  this project's own tagging additions. This project's vendored copy
+  (`vendor/libharu/`) deliberately dropped upstream libharu's own `demo/`
+  directory when first vendored (see `NOTICE.md`) to keep the initial scaffold
+  lean. That directory (confirmed still present in migrate-codex-7's own
+  untouched `lib/haru/demo/`, ~25 programs) covers real functionality this
+  project's five demos never touch: vector graphics (`arc_demo`, `line_demo`),
+  fonts (`chfont_demo`, CJK `jpfont_demo`/`ttfont_demo_jp`, TrueType
+  `ttfont_demo`, Type1, `character_map`, `encoding_list`), images (`png_demo`,
+  `jpeg_demo`, `raw_image_demo`), encryption/permissions (`encryption.c`,
+  `permission.c`), annotations (`link_annotation`, `text_annotation`),
+  outlines (`outline_demo`/`_jp`), attachments (`attach.c`), PDF/A conformance
+  (`pdf_a_conformance.c`), and a slide-show/grid-sheet layout example.
+- **Recreate that demo set as tagged examples** using this project's own API
+  (`HPDF_UA_Context`, structure elements, marked content) rather than leaving
+  them as libharu's original untagged versions -- i.e. this project's real
+  test/demo suite should eventually cover the full breadth of what libharu
+  itself can do, all of it accessibly tagged, not just the five report-shaped
+  examples (table/histogram/skyline/example/docmeta) built so far.
+
+Not scoped further than this list yet -- pick this up as a dedicated pass,
+porting a handful of the more representative demos first (a font demo, an
+image demo, an annotation demo) rather than all ~25 at once, following this
+project's own established milestone-by-milestone discipline.
