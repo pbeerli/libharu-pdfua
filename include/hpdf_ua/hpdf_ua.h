@@ -236,6 +236,56 @@ HPDF_EXPORT(HPDF_STATUS)
 HPDF_UA_SetActualText (HPDF_UA_Context ctx, HPDF_UA_StructElem elem,
                         const char *actual_text);
 
+/* ---------------------------------------------------------------------
+ * Milestone 6: tagging annotations (added while porting a representative
+ * annotation demo -- see docs/roadmap.md). Annotations are not part of
+ * any page content stream, so they cannot be wrapped in BDC/EMC the way
+ * HPDF_UA_BeginMarkedContent() wraps ordinary drawing operators; PDF
+ * associates an annotation with the structure tree via a different
+ * mechanism entirely (an /OBJR "object reference" kid, PDF 32000-1
+ * 14.7.4.3) and a different /ParentTree key domain (/StructParent, a
+ * single integer directly on the annotation dict, vs. a page's
+ * /StructParents key indexing an array of MCIDs).
+ * ------------------------------------------------------------------- */
+
+/* REAL. Associates `annot` with `elem` (typically a HPDF_UA_ROLE_LINK
+ * element, though nothing here requires that specific role) via a real
+ * /OBJR kid appended to elem's own /K array, assigns `annot` a fresh
+ * /StructParent key registered in this context's /ParentTree (the same
+ * flat /Nums number tree HPDF_UA_BeginMarkedContent() uses for pages --
+ * keys are drawn from one shared monotonic counter, so page and
+ * annotation keys never collide), and normalizes the annotation's /F
+ * flags to Print set / NoView clear -- a real PDF/UA-1 requirement (ISO
+ * 14289-1:2014 7.18, "Annotations shall have the print flag set and the
+ * NoView flag not set unless the annotation itself is an Artifact") that
+ * none of libharu's own annotation constructors set by default. Call
+ * this once per annotation, any time after both `elem` and `annot`
+ * exist (order between creating the two doesn't matter). `elem`'s /Pg
+ * need not already be set -- an OBJR-only element (a Link whose only
+ * child is the annotation reference, no marked-content span of its own)
+ * is valid PDF/UA-1, and this function works with such an element too;
+ * if `elem` is also used with HPDF_UA_BeginMarkedContent() (e.g. to wrap
+ * the link's own visible text), call that separately -- this function
+ * does not require or preclude it either way.
+ *
+ * Also copies `elem`'s own /Alt text (if HPDF_UA_SetAlternateText() was
+ * already called on it) onto the annotation's own /Contents key, if
+ * `elem` has one -- a genuinely separate PDF/UA-1 requirement from the
+ * structure-tree association above: ISO 14289-1:2014 7.18.5 requires
+ * link annotations specifically to carry their own alternate
+ * description via /Contents (PDF 32000-1 14.9.3), which a /Alt on the
+ * *structure element* does not by itself satisfy -- confirmed by a real
+ * veraPDF run while porting this project's own annotation demo (clause
+ * 7.18.5, "Links shall contain an alternate description via their
+ * Contents key"). Call HPDF_UA_SetAlternateText() on `elem` before this
+ * function if you want that text reused as /Contents automatically; if
+ * `elem` has no /Alt set, no /Contents is added and the caller is
+ * responsible for satisfying 7.18.5 another way (e.g. an /Contents it
+ * sets directly). */
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_TagAnnotation (HPDF_UA_Context ctx, HPDF_Page page,
+                        HPDF_UA_StructElem elem, HPDF_Annotation annot);
+
 #ifdef __cplusplus
 }
 #endif

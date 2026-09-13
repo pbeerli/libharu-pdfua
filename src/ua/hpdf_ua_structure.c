@@ -444,3 +444,95 @@ HPDF_UA_SetActualText (HPDF_UA_Context ctx, HPDF_UA_StructElem elem,
     (void) actual_text;
     return HPDF_UA_NOT_YET_IMPLEMENTED;
 }
+
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_TagAnnotation (HPDF_UA_Context ctx, HPDF_Page page,
+                        HPDF_UA_StructElem elem, HPDF_Annotation annot)
+{
+    HPDF_Dict objr;
+    HPDF_INT32 key;
+
+    if (!ctx || !page || !elem || !annot || elem->ctx != ctx)
+        return HPDF_INVALID_PARAMETER;
+
+    if (!HPDF_Page_Validate (page))
+        return HPDF_INVALID_PAGE;
+
+    /* /OBJR: {Type: /OBJR, Pg: page, Obj: annot} -- the structure-tree
+     * kid type used to "contain" an object that isn't page content (an
+     * annotation or an XObject), since it has no content-stream position
+     * of its own to wrap in BDC/EMC (PDF 32000-1 14.7.4.3). `annot` is
+     * always already xref-registered (every HPDF_Page_Create*Annot()
+     * constructor does this itself), so /Obj here is always a real
+     * indirect reference. */
+    objr = HPDF_Dict_New (ctx->pdf->mmgr);
+    if (!objr)
+        return HPDF_CheckError (&ctx->pdf->error);
+
+    if (HPDF_Dict_AddName (objr, "Type", "OBJR") != HPDF_OK)
+        return HPDF_CheckError (&ctx->pdf->error);
+    if (HPDF_Dict_Add (objr, "Pg", page) != HPDF_OK)
+        return HPDF_CheckError (&ctx->pdf->error);
+    if (HPDF_Dict_Add (objr, "Obj", annot) != HPDF_OK)
+        return HPDF_CheckError (&ctx->pdf->error);
+
+    if (HPDF_Array_Add (elem->kids, objr) != HPDF_OK)
+        return HPDF_CheckError (&ctx->pdf->error);
+
+    /* /StructParent: like a page's /StructParents key, but for a single
+     * object rather than an array indexed by MCID (PDF 32000-1
+     * 14.7.4.4) -- the /ParentTree /Nums entry for this key is `elem`'s
+     * dict directly, not an array of dicts the way a page's entry is.
+     * Drawn from the same monotonic counter
+     * hpdf_ua_find_or_create_page_entry() uses for pages, so the two
+     * key domains never collide even though they share one /Nums tree. */
+    key = (HPDF_INT32) (HPDF_Array_Items (ctx->parent_tree_nums) / 2);
+
+    if (HPDF_Array_AddNumber (ctx->parent_tree_nums, key) != HPDF_OK)
+        return HPDF_CheckError (&ctx->pdf->error);
+    if (HPDF_Array_Add (ctx->parent_tree_nums, elem->dict) != HPDF_OK)
+        return HPDF_CheckError (&ctx->pdf->error);
+
+    if (HPDF_Dict_AddNumber (annot, "StructParent", key) != HPDF_OK)
+        return HPDF_CheckError (&ctx->pdf->error);
+
+    /* /F: Print (bit 3, value 4) set, NoView (bit 6, value 32) clear --
+     * ISO 14289-1:2014 7.18 requires this for every annotation included
+     * in the logical structure (i.e. every annotation that isn't itself
+     * marked as an Artifact). None of libharu's own Link/URI-link
+     * annotation constructors set /F at all, so this is normally a
+     * fresh add; HPDF_Dict_RemoveElement() first makes it idempotent
+     * (safe to call again, or after application code already set some
+     * other /F value) rather than failing a second HPDF_Dict_Add(). */
+    HPDF_Dict_RemoveElement (annot, "F");
+    if (HPDF_Dict_AddNumber (annot, "F", 4) != HPDF_OK)
+        return HPDF_CheckError (&ctx->pdf->error);
+
+    /* /Contents: ISO 14289-1:2014 7.18.5 requires link annotations to
+     * carry their own alternate description via /Contents (PDF 32000-1
+     * 14.9.3) -- a genuinely separate requirement from the /OBJR
+     * structure-tree association above, and NOT satisfied by /Alt on
+     * `elem` alone (confirmed by a real veraPDF failure on this exact
+     * clause the first time this project's own annotation demo was
+     * validated). Reuse elem's /Alt text as /Contents when present,
+     * rather than requiring a second, separately-worded description --
+     * they describe the same link, so one real piece of text serves
+     * both purposes. */
+    {
+        HPDF_String alt_str = (HPDF_String) HPDF_Dict_GetItem (elem->dict,
+                "Alt", HPDF_OCLASS_STRING);
+
+        if (alt_str && alt_str->value) {
+            HPDF_String contents = HPDF_String_New (ctx->pdf->mmgr,
+                    (const char *) alt_str->value, NULL);
+            if (!contents)
+                return HPDF_CheckError (&ctx->pdf->error);
+
+            HPDF_Dict_RemoveElement (annot, "Contents");
+            if (HPDF_Dict_Add (annot, "Contents", contents) != HPDF_OK)
+                return HPDF_CheckError (&ctx->pdf->error);
+        }
+    }
+
+    return HPDF_OK;
+}
