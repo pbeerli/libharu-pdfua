@@ -409,3 +409,159 @@ Not scoped further than this list yet -- pick this up as a dedicated pass,
 porting a handful of the more representative demos first (a font demo, an
 image demo, an annotation demo) rather than all ~25 at once, following this
 project's own established milestone-by-milestone discipline.
+
+### First pass, done and veraPDF-validated, 2026-09-13
+
+Picked up exactly the "handful first" scope this section itself asked for:
+three new tagged demos (a font demo, an image demo, an annotation demo),
+plus the test-coverage script prerequisite. The remaining ~22 upstream
+demos (vector graphics, CJK/Type1 fonts, encryption/permissions, PDF/A
+conformance, attachments, slide-show/grid-sheet layout) are a deliberate,
+explicit scope cut for a later pass -- see "Not done" below.
+
+**`demo/tagged_font_demo.c`** (`demo/tagged_font_demo.c`) -- ported from
+libharu's original `ttfont_demo.c` (found at
+`source/migrate-codex-7/lib/haru/demo/ttfont_demo.c` in the sibling
+Migrate tree; this project's own `vendor/libharu/` dropped `demo/` when
+first vendored, see `NOTICE.md`). Embeds the same `fonts/DejaVuSans.ttf`
+this project already vendors (`HPDF_LoadTTFontFromFile(..., HPDF_TRUE)`)
+and tags the specimen content -- font name, alphabet/digits, and the
+sample sentence at three sizes -- as `Document > [H1, P, H2, P, H2, P]`
+instead of the original's plain, untagged text. A decorative divider
+rule is marked as an Artifact, matching `tagged_table_demo.c`'s
+border-rectangle precedent. **Result: 106/106 PDF/UA-1 checks, veraPDF
+prints `PASS`, on the first attempt** (1025/1025 individual checks);
+`leaks --atExit` clean (0 leaks).
+
+**`demo/tagged_image_demo.c`** (`demo/tagged_image_demo.c`) -- ported
+from libharu's original `raw_image_demo.c`, not `png_demo.c`/
+`jpeg_demo.c`: this project's `CMakeLists.txt` deliberately disables
+libpng discovery (`CMAKE_DISABLE_FIND_PACKAGE_PNG ON`, see its own
+comment), so a PNG-based port would have needed a new build dependency
+this project doesn't otherwise carry. `raw_image_demo.c`'s approach
+needs no image-decoding library at all, matching this section's own
+"or raw_image_demo if that's simpler" suggestion. Rather than vendor a
+new binary test-image asset (which would have meant a new
+`NOTICE.md`/license entry, same rigor as `fonts/DejaVuSans-LICENSE.txt`
+-- deliberately avoided since it wasn't needed), this demo computes two
+small images at runtime (a 64x64 RGB gradient and a 64x16 grayscale
+ramp) and tags each as its own `Document > Figure` with real, accurate
+`/Alt` text describing the actual computed pixel pattern, followed by
+its own `Document > Caption` -- matching `tagged_histogram_demo.c`'s
+Figure+Caption pattern exactly, now exercising `HPDF_LoadRawImageFromMem()`
+or `HPDF_Page_DrawImage()` (a real libharu code path no prior demo in
+this project touched) instead of only path-painting/text operators.
+**Result: 106/106 PDF/UA-1 checks, veraPDF prints `PASS`, on the first
+attempt** (469/469 individual checks); `leaks --atExit` clean.
+
+**`demo/tagged_annotation_demo.c`** (`demo/tagged_annotation_demo.c`) --
+ported from libharu's original `link_annotation.c`: an index page with
+three real link annotations (two internal page-jump links via
+`HPDF_Page_CreateLinkAnnot()`, one external URI link via
+`HPDF_Page_CreateURILinkAnnot()`) plus two minimal tagged destination
+pages. This is the one demo in this pass that needed real, new engineering,
+not just porting existing calls onto existing tagging API: annotations are
+not part of any page content stream, so `HPDF_UA_BeginMarkedContent()`
+cannot wrap them the way it wraps ordinary drawing operators. Added
+**`HPDF_UA_TagAnnotation()`** (`include/hpdf_ua/hpdf_ua.h`,
+`src/ua/hpdf_ua_structure.c`) -- a new, real function, not a stub --
+which:
+- appends a real `/OBJR` (object-reference) kid to a `HPDF_UA_ROLE_LINK`
+  element's own `/K` array, the PDF mechanism for a structure element to
+  "contain" an annotation (PDF 32000-1 14.7.4.3);
+- assigns the annotation a fresh `/StructParent` key into this context's
+  existing `/ParentTree` `/Nums` (the same flat number tree
+  `HPDF_UA_BeginMarkedContent()` already uses for pages' `/StructParents`
+  keys -- one shared monotonic counter, so the two key domains never
+  collide, confirmed by direct testing, not just by inspection);
+- normalizes the annotation's `/F` flags to Print-set/NoView-clear (ISO
+  14289-1:2014 7.18) -- none of libharu's own annotation constructors set
+  `/F` by default, confirmed by reading `hpdf_annotation.c` directly.
+
+**Two real, veraPDF-caught findings this demo produced, not found by
+inspection alone** (matching this project's own established pattern from
+every prior milestone -- see Milestone 1's own "found by veraPDF, not by
+inspection" bugs):
+1. The first `HPDF_UA_TagAnnotation()` pass (OBJR + `/StructParent` +
+   `/F` only) still failed ISO 14289-1:2014 7.18.5 ("Links shall contain
+   an alternate description via their Contents key", PDF 32000-1 14.9.3)
+   with 3 failed checks (one per link annotation) -- a real, separate
+   PDF/UA-1 requirement from the structure-tree association itself: a
+   `/Alt` on the *structure element* does not satisfy it, only a
+   `/Contents` entry on the *annotation* does. Fixed by having
+   `HPDF_UA_TagAnnotation()` copy the associated element's own `/Alt`
+   text (if `HPDF_UA_SetAlternateText()` was already called on it) onto
+   the annotation's `/Contents` key -- one real description serving both
+   purposes, documented in `hpdf_ua.h`'s own comment on the function so
+   a future caller understands why setting `/Alt` first matters here.
+2. Confirmed, via the same real run, that this fix actually closed the
+   gap: re-running `validate/run_verapdf.sh` after the `/Contents` fix
+   moved this demo from 105/106 rules (784 passed / 3 failed checks) to
+   **106/106 (787/787 checks, veraPDF prints `PASS`)** -- verified
+   directly, not assumed.
+
+`leaks --atExit` clean (0 leaks) on the fixed version.
+
+**All five pre-existing demos re-verified unchanged after these library
+additions** (the new `HPDF_UA_TagAnnotation()` code is purely additive,
+touching no existing function): `tagged_table_demo` 106/106 (595/595
+checks), `tagged_histogram_demo` 106/106 (252/252), `tagged_skyline_demo`
+106/106 (379/379), `tagged_example_demo` 106/106 (1063/1063), each
+re-run through `leaks --atExit` (0 leaks). `docmeta_demo` (Milestone 0
+scaffolding, not a fully tagged demo, never claimed full PDF/UA-1
+compliance) unchanged at its own known 103/106 baseline.
+
+**Test coverage (`tests/run_all_demos.sh`, this pass's other named
+prerequisite)**: a new script -- `tests/run_all_demos.sh` -- builds all
+eight demos (the original five plus these three new ones), runs each to
+regenerate its PDF, and runs `validate/run_verapdf.sh` against every one,
+asserting a per-demo recorded baseline (0 failed rules for the seven
+fully tagged demos; at most 3 for `docmeta_demo`'s own documented,
+deliberate Milestone-0 partial scope) rather than a flat "must be
+`PASS`" that would incorrectly fail `docmeta_demo` for something it was
+never scoped to fix. Fails loudly (nonzero exit, one `FAIL:` line per
+regressed demo naming the demo and how many rules/checks regressed) if
+any demo's real veraPDF result gets worse than its baseline. **Verified
+to actually catch a regression, not just written and assumed to work**:
+temporarily made `HPDF_UA_SetAlternateText()` a no-op (simulating a
+real future refactor bug), rebuilt, and re-ran the script -- it
+correctly reported `FAIL` for exactly the five demos that depend on
+`/Alt` (histogram, skyline, example, image, and annotation -- the last
+because `HPDF_UA_TagAnnotation()`'s `/Contents` copy also depends on
+`/Alt`) while correctly leaving `tagged_table_demo` and
+`tagged_font_demo` (neither of which calls `HPDF_UA_SetAlternateText()`)
+passing; then reverted the injected bug and reconfirmed a clean rebuild
+puts all eight demos back at their recorded baselines. This is real
+coverage of libharu's own original TrueType-embedding, raw-image, and
+annotation code paths -- exercised through this project's tagging layer
+on every build, not a no-op placeholder.
+
+**Not done in this pass, deliberately, per this section's own "handful
+first" scope**:
+- The other ~22 upstream demos this section's own list named (vector
+  graphics `arc_demo`/`line_demo`, CJK/Type1 fonts, `encoding_list`,
+  encryption/permissions, PDF/A conformance, attachments, outline demos,
+  slide-show/grid-sheet layout) are not ported. A real, explicit scope
+  cut, not an oversight -- pick up the next representative slice in a
+  future pass the same way this one did.
+- `README.md`'s own "how to run" demo list (lines ~57-61) was not
+  updated to mention the three new binaries -- left alone deliberately
+  per this pass's explicit instructions not to touch `README.md` unless
+  a license-file addition was genuinely required (it wasn't: the image
+  demo computes its images at runtime rather than vendoring a new
+  binary asset, specifically to avoid that). A real, small, known gap:
+  `README.md` is accurate about the original five demos but silent on
+  the three new ones.
+- No lighter-weight direct-metadata check (e.g. `qpdf --qdf` + grep, as
+  `tests/README.md` originally sketched for document-level-only demos)
+  was added -- `tests/run_all_demos.sh`'s real veraPDF run already
+  covers every demo this project actually ships, including
+  `docmeta_demo`, so the lighter-weight variant would have been
+  redundant coverage, not new coverage.
+- Milestone 6's own second prerequisite ("test coverage of libharu's own
+  original functionality") is now covered for exactly the functionality
+  these three new demos exercise (TrueType embedding/subsetting, raw
+  RGB/grayscale image drawing, link/URI annotations, destinations) --
+  not for the untouched ~22-demo remainder (CJK fonts, encryption,
+  PDF/A, attachments, etc.), which still has zero coverage in this
+  project. A real, bounded gap, not a completed prerequisite.

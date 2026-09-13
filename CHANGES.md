@@ -4,6 +4,51 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## 0.6.0 (2026-09-13) -- Milestone 6 first pass: font/image/annotation demos, test coverage
+
+- New `demo/tagged_font_demo.c` (ported from libharu's `ttfont_demo.c`):
+  embedded DejaVu Sans specimen text tagged as `Document > [H1, P, H2,
+  P, H2, P]`. **106/106 PDF/UA-1 checks, `PASS` on the first attempt**
+  (1025/1025 individual checks); `leaks --atExit` clean.
+- New `demo/tagged_image_demo.c` (ported from libharu's
+  `raw_image_demo.c`, not `png_demo.c`/`jpeg_demo.c` -- this project's
+  build disables libpng discovery): two runtime-computed raw images (an
+  RGB gradient, a grayscale ramp), each a tagged `Figure` with accurate
+  `/Alt` text plus its own `Caption`. No new vendored binary asset, so
+  no new `NOTICE.md`/license entry needed. **106/106, `PASS` on the
+  first attempt** (469/469 checks); `leaks --atExit` clean.
+- New `demo/tagged_annotation_demo.c` (ported from libharu's
+  `link_annotation.c`): three real link annotations (two internal, one
+  URI), each tagged via a `Link` structure element. Needed a real new
+  addition, not just porting existing calls: **`HPDF_UA_TagAnnotation()`**
+  (`include/hpdf_ua/hpdf_ua.h`, `src/ua/hpdf_ua_structure.c`) -- adds a
+  real `/OBJR` structure-tree kid, a `/StructParent` key into the
+  existing `/ParentTree`, and normalizes `/F` to Print-set/NoView-clear
+  (ISO 14289-1:2014 7.18). A real veraPDF run caught one further gap not
+  found by inspection: link annotations also need their own `/Contents`
+  (ISO 14289-1:2014 7.18.5, PDF 32000-1 14.9.3) -- a `/Alt` on the
+  structure element alone doesn't satisfy it. Fixed by having
+  `HPDF_UA_TagAnnotation()` copy the element's `/Alt` onto the
+  annotation's `/Contents`. **Result: 106/106, `PASS`** (787/787
+  checks, up from 105/106 before the `/Contents` fix); `leaks --atExit`
+  clean.
+- All five pre-existing demos re-verified unchanged: `tagged_table_demo`,
+  `tagged_histogram_demo`, `tagged_skyline_demo`, `tagged_example_demo`
+  still 106/106 with 0 leaks each; `docmeta_demo` unchanged at its own
+  known 103/106 Milestone-0 baseline.
+- New `tests/run_all_demos.sh`: builds all eight demos and validates
+  each against `validate/run_verapdf.sh`, asserting a per-demo recorded
+  baseline (0 failed rules for the seven fully tagged demos, at most 3
+  for `docmeta_demo`'s own documented partial scope), failing loudly
+  and naming the regressed demo(s) otherwise. Verified to actually catch
+  a regression: a temporary no-op patch to `HPDF_UA_SetAlternateText()`
+  made the script correctly fail exactly the five demos that depend on
+  `/Alt`, reverted afterward with a clean rebuild reconfirming all eight
+  demos back at baseline.
+- Full writeup, including the deliberately out-of-scope remainder (~22
+  more upstream demos not yet ported), in `docs/roadmap.md`'s Milestone
+  6 section.
+
 ## 0.5.1 (2026-09-12) -- combined text+table+figure example
 
 New `demo/tagged_example_demo.c`: a single document mixing ordinary
