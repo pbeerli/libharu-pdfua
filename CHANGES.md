@@ -4,6 +4,34 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## 0.6.2 (2026-09-13) -- fix: invalid /ToUnicode CMap for UTF-8/CID fonts
+
+- `vendor/libharu/src/hpdf_font_cid.c` -- the one exception to this
+  project's "vendor/libharu is unmodified" rule, plainly marked here and
+  in `NOTICE.md`/the file itself. `HPDF_Type0Font_New()`'s "Identity-H"
+  branch (used only by `HPDF_UseUTFEncodings()`'s "UTF-8" encoder -- no
+  CJK encoder in this codebase uses that ordering) reused `CreateCMap()`
+  for the font's `/ToUnicode` entry, which emits `cidrange`/`cidchar`
+  operators -- valid for a font's `/Encoding` CMap, not for `/ToUnicode`
+  (PDF32000-1:2008 9.10.3 requires `bfchar`/`bfrange`); real consumers
+  (confirmed with veraPDF) correctly refuse to resolve any glyph through
+  the resulting stream. Found and fixed while integrating this project's
+  tagging module into Migrate-n's own report code, which draws Greek
+  letters (Theta, Delta, alpha, mu, sigma) as real Unicode characters
+  through an embedded Liberation Sans font reused as a UTF-8/CID font,
+  rather than the old Symbol-font ASCII-remapping trick. New
+  `CreateToUnicodeCMap()` emits a real `bfrange`-based CMap instead, split
+  into 256-code single-row chunks (a bfrange whose low byte overflows its
+  own row does not resolve correctly in practice -- confirmed directly:
+  ASCII digits worked through one `<0000> <FFFF>` range, U+0398 GREEK
+  CAPITAL LETTER THETA did not, until splitting fixed both). Verified via
+  veraPDF against a real embedded-Liberation-Sans-as-Unicode-CID-font
+  page: PDF/UA-1 clause `7.21.7` ("glyph cannot be mapped to Unicode")
+  went from 64 failing checks to 0, full document compliance
+  (`isCompliant="true"`); this project's own `tests/run_all_demos.sh`
+  re-run clean afterward, all 8 demos at their recorded baseline
+  (unaffected -- none of them exercise the UTF-8/CID path yet).
+
 ## 0.6.1 (2026-09-13) -- fix: missing H1 heading in four demos
 
 - `tagged_table_demo.c`, `tagged_image_demo.c`, `tagged_histogram_demo.c`,

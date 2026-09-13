@@ -3,12 +3,33 @@
 This project vendors libharu 2.4.5 (https://github.com/libharu/libharu,
 zlib/libpng-style license, see `LICENSE`) under `vendor/libharu/`, unmodified
 except where noted below, and adds a new `hpdf_ua` module on top of it that
-does not touch libharu's own source files. Per the license's condition 2
-("Altered source versions must be plainly marked as such"): the vendored
-copy under `vendor/libharu/` is presented as-is from libharu 2.4.5 with no
-edits (verify with a diff against upstream 2.4.5 at any time); all new
-functionality lives in `src/ua/` and `include/hpdf_ua/`, and is clearly this
-project's own addition, not part of upstream libharu.
+does not touch libharu's own source files (with the one exception below).
+Per the license's condition 2 ("Altered source versions must be plainly
+marked as such"): all new functionality lives in `src/ua/` and
+`include/hpdf_ua/`, and is clearly this project's own addition, not part of
+upstream libharu.
+
+**One exception, plainly marked here and in the file itself**:
+`vendor/libharu/src/hpdf_font_cid.c` carries a real fix, added while
+integrating this project's tagging module into Migrate-n's own report code
+(`pretty.c`): `HPDF_Type0Font_New()`'s "Identity-H" branch (used by
+`HPDF_UseUTFEncodings()`'s "UTF-8" encoder -- the only encoder in this
+codebase using that ordering; no CJK encoder is affected) reused
+`CreateCMap()`, which emits `cidrange`/`cidchar` operators, for the font's
+`/ToUnicode` entry -- valid syntax for a font's `/Encoding` CMap, but not
+for `/ToUnicode` (PDF32000-1:2008 9.10.3 requires `bfchar`/`bfrange`); real
+consumers (confirmed directly with veraPDF) correctly refuse to resolve any
+glyph through the resulting stream. Fixed by adding a separate
+`CreateToUnicodeCMap()` that emits a real `bfrange`-based CMap instead
+(split into 256-code, single-row chunks -- a bfrange whose low byte
+overflows its own row does not resolve correctly in practice, confirmed
+directly: ASCII digits worked through a single `<0000> <FFFF>` range,
+U+0398 GREEK CAPITAL LETTER THETA, a different row, did not, until
+splitting fixed it for both). Verified via veraPDF against a real embedded-
+Liberation-Sans-as-Unicode-CID-font page (Migrate-n's own `symbol_Theta()`
+family): PDF/UA-1 clause 7.21.7 ("glyph cannot be mapped to Unicode") went
+from 64 failing checks to 0, full document compliance achieved
+(`isCompliant="true"`), no other libharu code path touched or affected.
 
 Trimmed from the original libharu source tree when vendoring (not needed for
 this project's scope, and not carried forward): `demo/` (this project has its
