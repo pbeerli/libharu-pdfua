@@ -67,6 +67,17 @@ if(LIBHARU_PDFUA_BUILD_DEMOS)
 
     add_executable(docmeta_demo demo/docmeta_demo.c)
     target_link_libraries(docmeta_demo PRIVATE hpdf_ua)
+
+    # Milestone 6: tagged ports of a representative slice of libharu's own
+    # original demo set (vendor/libharu's demo/ directory was trimmed when
+    # vendored, see NOTICE.md) -- a font demo, an image demo, and an
+    # annotation demo, each using this project's own tagging API instead of
+    # being left untagged.
+    add_executable(tagged_font_demo demo/tagged_font_demo.c)
+    target_link_libraries(tagged_font_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_font_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
+
 endif()
 
 # --- tests (CTest wiring placeholder; see tests/README.md) --------------
