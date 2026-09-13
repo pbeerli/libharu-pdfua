@@ -26,28 +26,29 @@ target -- see `docs/pdf_ua_requirements.md`.
 
 ## Status
 
-**Milestones 1-4 done, Milestone 5 decided, 2026-09-12 -- all three
-tagged demos pass PDF/UA-1 validation outright, and integration into
-Migrate is recommended (as a new, additive `report_pdf_tagged.c`
-backend, not a rewrite of Migrate's existing PDF path) -- see
-`docs/roadmap.md`'s Milestone 5 section for the full reasoning, checked
-directly against Migrate's actual `report_model.c` architecture. Timing
-of that integration work is a separate, still-open scheduling call.** See `docs/roadmap.md` for the full
-milestone list and `CHANGES.md` for exactly what exists right now. Real,
-working: document-level metadata (`/Lang`, `/DisplayDocTitle`,
-`/MarkInfo`+`/StructTreeRoot`, a real XMP `/Metadata` stream declaring
-PDF/UA-1 conformance), a real structure tree and marked-content tagging
-(`HPDF_UA_Context`, `HPDF_UA_BeginStructureElement()`,
-`HPDF_UA_BeginMarkedContent()`, table-header `/Scope`, figure `/Alt`,
-artifact marking, automatic `/Tabs /S`), a real document outline tied to
-each demo's actual page, and an embedded font (DejaVu Sans) in place of
-never-embedded Standard-14 Helvetica. Works for text content
-(`demo/tagged_table_demo.c`), path-painting content like chart bars/axes
-(`demo/tagged_histogram_demo.c`), and multi-series polylines/dashed
-strokes with a real reading-order decision for legend text
-(`demo/tagged_skyline_demo.c`). **All three now score 106 of 106 PDF/UA-1
-checks under veraPDF -- `verapdf --format text` prints the literal word
-`PASS`, not just a lower failure count.**
+**Milestones 1-5 done, Milestone 6 (public-release prerequisites) under
+way, 2026-09-13 -- eight demos, all fully tagged ones at 106/106 PDF/UA-1
+checks under veraPDF ("PASS", not just a lower failure count).** See
+`docs/roadmap.md` for the full milestone list and `CHANGES.md` for
+exactly what exists right now. Real, working: document-level metadata
+(`/Lang`, `/DisplayDocTitle`, `/MarkInfo`+`/StructTreeRoot`, a real XMP
+`/Metadata` stream declaring PDF/UA-1 conformance), a real structure
+tree and marked-content tagging (`HPDF_UA_Context`,
+`HPDF_UA_BeginStructureElement()`, `HPDF_UA_BeginMarkedContent()`,
+table-header `/Scope`, figure `/Alt`, artifact marking, automatic
+`/Tabs /S`), a real document outline tied to each demo's actual page,
+tagged link annotations (`HPDF_UA_TagAnnotation()`: `/OBJR`,
+`/StructParent`, `/Contents`), and an embedded font (DejaVu Sans) in
+place of never-embedded Standard-14 Helvetica. Beyond the original
+three report-shaped demos (table, histogram/figure, multi-series
+skyline plot), Milestone 6 started recreating libharu's own original
+demo set as tagged examples: a TrueType font demo, a raw-image
+(`Figure`) demo, and a link-annotation demo -- see `demo/` and
+`tests/run_all_demos.sh`, which builds and PDF/UA-1-validates all eight
+demos automatically. Migrate integration is recommended (as a new,
+additive `report_pdf_tagged.c` backend, not a rewrite of Migrate's
+existing PDF path) -- see `docs/roadmap.md`'s Milestone 5 section;
+timing of that integration is a separate, still-open scheduling call.
 
 ## Building
 
@@ -59,6 +60,9 @@ cmake --build build
 ./build/tagged_histogram_demo # produces a real, PDF/UA-1-checked tagged figure
 ./build/tagged_skyline_demo   # produces a real, PDF/UA-1-checked multi-series plot
 ./build/tagged_example_demo   # text + table + figure together, one document
+./build/tagged_font_demo      # embedded TrueType font, tagged text (ttfont_demo.c port)
+./build/tagged_image_demo     # tagged Figure from a raw computed image (raw_image_demo.c port)
+./build/tagged_annotation_demo # tagged link annotations (link_annotation.c port)
 ```
 
 Unix/Linux and macOS are the supported platforms; on Windows, build under a
@@ -87,7 +91,9 @@ published `verapdf/cli` image automatically). See
   PDF/UA-1's embedded-fonts requirement.
 - `validate/` -- veraPDF wrapper script.
 - `docs/` -- the PDF/UA-1 requirements checklist and the roadmap.
-- `tests/` -- placeholder; real CTest wiring lands with Milestone 1.
+- `tests/` -- `run_all_demos.sh`: builds every demo and validates each
+  against veraPDF, asserting each one matches or beats its recorded
+  PDF/UA-1 baseline.
 
 ## License
 
