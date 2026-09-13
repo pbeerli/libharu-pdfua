@@ -78,6 +78,10 @@ if(LIBHARU_PDFUA_BUILD_DEMOS)
     target_compile_definitions(tagged_font_demo PRIVATE
         HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
 
+    add_executable(tagged_image_demo demo/tagged_image_demo.c)
+    target_link_libraries(tagged_image_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_image_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
 endif()
 
 # --- tests (CTest wiring placeholder; see tests/README.md) --------------
