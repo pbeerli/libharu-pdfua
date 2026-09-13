@@ -4,6 +4,15 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## 0.6.1 (2026-09-13) -- fix: missing H1 heading in four demos
+
+- `tagged_table_demo.c`, `tagged_image_demo.c`, `tagged_histogram_demo.c`,
+  `tagged_skyline_demo.c` (all predating the H1 convention `font`/
+  `annotation`/`example` demos already had) now each open with a real H1
+  title. Found via `avalpdf`, which flagged "Document has no headings" as
+  an issue on all four; each now scores 100% clean under `avalpdf` with no
+  change to its recorded veraPDF baseline (still 106/106).
+
 ## 0.6.0 (2026-09-13) -- Milestone 6 first pass: font/image/annotation demos, test coverage
 
 - New `demo/tagged_font_demo.c` (ported from libharu's `ttfont_demo.c`):

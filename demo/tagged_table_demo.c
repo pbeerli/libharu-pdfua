@@ -57,7 +57,7 @@ main (void)
     HPDF_Font font;
     const char *font_name;
     HPDF_UA_Context ctx;
-    HPDF_UA_StructElem doc_elem, table_elem, tr_elem, cell_elem;
+    HPDF_UA_StructElem doc_elem, h1_elem, table_elem, tr_elem, cell_elem;
     int row, col;
     HPDF_REAL x, y;
     const HPDF_REAL col_width = 100;
@@ -125,8 +125,33 @@ main (void)
     }
 
     doc_elem = HPDF_UA_BeginStructureElement (ctx, NULL, HPDF_UA_ROLE_DOCUMENT);
+    if (!doc_elem) {
+        fprintf (stderr, "HPDF_UA_BeginStructureElement failed\n");
+        goto fail;
+    }
+
+    /* --- H1 title -- every demo needs at least one heading (avalpdf's
+     * "Document has no headings" check); this one predates that being
+     * added to the later demos (font/annotation/example). --- */
+    h1_elem = HPDF_UA_BeginStructureElement (ctx, doc_elem, HPDF_UA_ROLE_H1);
+    if (!h1_elem)
+        goto fail;
+    status = HPDF_UA_BeginMarkedContent (ctx, page, h1_elem);
+    if (status != HPDF_OK)
+        goto fail;
+    HPDF_Page_SetFontAndSize (page, font, 18);
+    HPDF_Page_BeginText (page);
+    HPDF_Page_MoveTextPos (page, left, 750);
+    HPDF_Page_ShowText (page, "Table Demo");
+    HPDF_Page_EndText (page);
+    status = HPDF_UA_EndMarkedContent (ctx, page);
+    if (status != HPDF_OK)
+        goto fail;
+    HPDF_UA_EndStructureElement (ctx, h1_elem);
+    HPDF_Page_SetFontAndSize (page, font, 10);
+
     table_elem = HPDF_UA_BeginStructureElement (ctx, doc_elem, HPDF_UA_ROLE_TABLE);
-    if (!doc_elem || !table_elem) {
+    if (!table_elem) {
         fprintf (stderr, "HPDF_UA_BeginStructureElement failed\n");
         goto fail;
     }

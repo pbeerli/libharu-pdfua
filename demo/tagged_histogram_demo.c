@@ -45,7 +45,7 @@ main (void)
     HPDF_Font font;
     const char *font_name;
     HPDF_UA_Context ctx;
-    HPDF_UA_StructElem doc_elem, figure_elem, caption_elem;
+    HPDF_UA_StructElem doc_elem, h1_elem, figure_elem, caption_elem;
     HPDF_STATUS status;
     int i;
 
@@ -109,6 +109,25 @@ main (void)
     doc_elem = HPDF_UA_BeginStructureElement (ctx, NULL, HPDF_UA_ROLE_DOCUMENT);
     if (!doc_elem)
         goto fail;
+
+    /* --- H1 title -- every demo needs at least one heading (avalpdf's
+     * "Document has no headings" check); this one predates that being
+     * added to the later demos (font/annotation/example). --- */
+    h1_elem = HPDF_UA_BeginStructureElement (ctx, doc_elem, HPDF_UA_ROLE_H1);
+    if (!h1_elem)
+        goto fail;
+    status = HPDF_UA_BeginMarkedContent (ctx, page, h1_elem);
+    if (status != HPDF_OK)
+        goto fail;
+    HPDF_Page_SetFontAndSize (page, font, 18);
+    HPDF_Page_BeginText (page);
+    HPDF_Page_MoveTextPos (page, chart_left, 750);
+    HPDF_Page_ShowText (page, "Histogram Demo");
+    HPDF_Page_EndText (page);
+    status = HPDF_UA_EndMarkedContent (ctx, page);
+    if (status != HPDF_OK)
+        goto fail;
+    HPDF_UA_EndStructureElement (ctx, h1_elem);
 
     /* --- Figure: the whole chart is one marked-content span --- */
     figure_elem = HPDF_UA_BeginStructureElement (ctx, doc_elem, HPDF_UA_ROLE_FIGURE);
