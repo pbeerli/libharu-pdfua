@@ -166,6 +166,27 @@ HPDF_EXPORT(HPDF_STATUS)
 HPDF_UA_BeginMarkedContent (HPDF_UA_Context ctx, HPDF_Page page,
                              HPDF_UA_StructElem elem);
 
+/* REAL. Same as HPDF_UA_BeginMarkedContent(), but also writes
+ * `actual_text` as this span's own /ActualText, directly in the BDC
+ * operand dictionary in the page content stream (PDF 32000-1 14.9.4) --
+ * not just on the structure element the way HPDF_UA_SetActualText()
+ * does. Added because a real consumer's checker turned out to look for
+ * /ActualText on the marked-content span itself (walking the content
+ * stream, the same way it recovers ordinary text) rather than (or in
+ * addition to) the structure element's own /ActualText -- see that
+ * function's own comment. Prefer this over a separate
+ * HPDF_UA_SetActualText() call wherever the span's content isn't
+ * reliably recoverable by a checker walking the content stream on its
+ * own, such as Greek/math notation drawn via a symbol/CID font; the two
+ * are not mutually exclusive (nothing stops calling
+ * HPDF_UA_SetActualText() on `elem` too), but this one is the one that
+ * actually mattered in practice. `actual_text` may be plain ASCII or
+ * UTF-8, same encoding rule as HPDF_UA_SetActualText(). */
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_BeginMarkedContentWithActualText (HPDF_UA_Context ctx, HPDF_Page page,
+                                           HPDF_UA_StructElem elem,
+                                           const char *actual_text);
+
 /* REAL. Closes the marked-content span opened by HPDF_UA_BeginMarkedContent()
  * on this page. */
 HPDF_EXPORT(HPDF_STATUS)

@@ -165,9 +165,15 @@ HPDF_UA_EndStructureElement (HPDF_UA_Context ctx, HPDF_UA_StructElem elem)
     return HPDF_OK;
 }
 
-HPDF_EXPORT(HPDF_STATUS)
-HPDF_UA_BeginMarkedContent (HPDF_UA_Context ctx, HPDF_Page page,
-                             HPDF_UA_StructElem elem)
+/* Shared body for HPDF_UA_BeginMarkedContent()/_WithActualText() below --
+ * identical except for one extra `/ActualText <...>` entry written into
+ * the BDC operand dictionary when `actual_text` is non-NULL. Kept as one
+ * function (not two independent copies) so the MCID/ParentTree
+ * bookkeeping above the BDC write itself can never drift between the
+ * two public entry points. */
+static HPDF_STATUS
+BeginMarkedContentImpl (HPDF_UA_Context ctx, HPDF_Page page,
+                         HPDF_UA_StructElem elem, const char *actual_text)
 {
     HPDF_UA_PageEntry page_entry;
     HPDF_BOOL first_use_of_elem;
@@ -252,10 +258,59 @@ HPDF_UA_BeginMarkedContent (HPDF_UA_Context ctx, HPDF_Page page,
         return HPDF_CheckError (&ctx->pdf->error);
     if (HPDF_Stream_WriteInt (attr->stream, mcid) != HPDF_OK)
         return HPDF_CheckError (&ctx->pdf->error);
+
+    if (actual_text) {
+        /* /ActualText on the marked-content properties dict itself (PDF
+         * 32000-1 14.9.4), not just on the structure element -- some
+         * checkers/AT walk the content stream's own MC property lists
+         * for a text equivalent rather than (or in addition to) a
+         * structure element's /ActualText, which is why
+         * HPDF_UA_SetActualText() alone (struct-element-only) turned out
+         * not to be enough for one real consumer (see that function's
+         * own comment history). HPDF_String_Write() gives us the exact
+         * same UTF-16BE-with-BOM (or plain PDFDocEncoding, if no "UTF-8"
+         * encoder is registered) encoding HPDF_UA_SetActualText() uses,
+         * written directly into the content stream instead of into an
+         * indirect object -- so this temporary HPDF_String is never
+         * added to any dict/xref and must be freed here once written. */
+        HPDF_Encoder encoder = HPDF_Doc_FindEncoder (ctx->pdf, "UTF-8");
+        HPDF_String s = HPDF_String_New (ctx->pdf->mmgr, actual_text, encoder);
+
+        if (!s)
+            return HPDF_CheckError (&ctx->pdf->error);
+
+        if (HPDF_Stream_WriteStr (attr->stream, " /ActualText ") != HPDF_OK) {
+            HPDF_String_Free (s);
+            return HPDF_CheckError (&ctx->pdf->error);
+        }
+        if (HPDF_String_Write (s, attr->stream, NULL) != HPDF_OK) {
+            HPDF_String_Free (s);
+            return HPDF_CheckError (&ctx->pdf->error);
+        }
+        HPDF_String_Free (s);
+    }
+
     if (HPDF_Stream_WriteStr (attr->stream, ">> BDC\012") != HPDF_OK)
         return HPDF_CheckError (&ctx->pdf->error);
 
     return HPDF_OK;
+}
+
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_BeginMarkedContent (HPDF_UA_Context ctx, HPDF_Page page,
+                             HPDF_UA_StructElem elem)
+{
+    return BeginMarkedContentImpl (ctx, page, elem, NULL);
+}
+
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_BeginMarkedContentWithActualText (HPDF_UA_Context ctx, HPDF_Page page,
+                                           HPDF_UA_StructElem elem,
+                                           const char *actual_text)
+{
+    if (!actual_text)
+        return HPDF_INVALID_PARAMETER;
+    return BeginMarkedContentImpl (ctx, page, elem, actual_text);
 }
 
 HPDF_EXPORT(HPDF_STATUS)

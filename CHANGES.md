@@ -17,15 +17,31 @@ milestone completes, `PATCH` for fixes within a milestone.
   up fall back to a plain PDFDocEncoding string) so non-ASCII
   `actual_text` (e.g. Greek letters) round-trips as real UTF-16BE instead
   of being misread byte-for-byte.
-- Motivating case, found integrating this project into Migrate-n: even
-  after 0.6.2's real `/ToUnicode` CMap fix, a checker doing its own
-  structure-tree/marked-content text extraction (rather than linear
-  content-stream extraction the way `pdftotext` does) still reported a
+- Also added `HPDF_UA_BeginMarkedContentWithActualText()`, writing the
+  same `/ActualText` directly into the BDC operand dictionary in the
+  content stream (PDF 32000-1 14.9.4 also allows it there, not just on
+  the structure element) -- a checker walking the content stream itself
+  for a text equivalent may look for it at that level rather than (or in
+  addition to) the structure element's own copy.
+- Motivating case, found integrating this project into Migrate-n: a
+  real-world PDF/UA checker (avalpdf, backed by PDFix SDK) reported a
   TD/TH's content as empty whenever that content was drawn through the
-  Identity-H/CID "UTF-8" font -- `/ActualText` gives such a checker a
-  direct, tool-independent Unicode text equivalent for that element,
-  independent of how it walks (or fails to walk) the CID font's own
-  content-stream text-showing operators.
+  Identity-H/CID "UTF-8" font -- suspected at the time to be a gap this
+  checker's own structure-tree text extraction had for CID-font content,
+  which `/ActualText` (on the structure element and/or the marked-content
+  span) would sidestep by giving it a direct, tool-independent Unicode
+  text equivalent. **Correction, same investigation**: the real cause was
+  unrelated to this library -- the consuming project's own Autotools
+  build was silently linking a libharu build from before 0.6.2's
+  `/ToUnicode` fix even existed (a stale prebuilt static library its
+  Makefile never knew to rebuild), so the checker was correctly reporting
+  a font it was actually still seeing the pre-0.6.2 broken CMap for.
+  Once that got rebuilt, the checker read the CID font's own `/ToUnicode`
+  content just fine, `/ActualText` or not. Both functions above are kept
+  regardless -- they are correct, real PDF/UA-1 features on their own
+  merits (some checkers or assistive technology genuinely do prefer
+  `/ActualText` over walking a content stream) -- just not, in the end,
+  what actually explained this specific symptom.
 
 ## 0.6.2 (2026-09-13) -- fix: invalid /ToUnicode CMap for UTF-8/CID fonts
 
