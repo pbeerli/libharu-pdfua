@@ -4,6 +4,29 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## 0.6.3 (2026-09-14) -- implement HPDF_UA_SetActualText() (was a stub)
+
+- `HPDF_UA_SetActualText()` had been a documented no-op stub since
+  Milestone 4. Implemented for real: sets `/ActualText` (PDF 32000-1
+  14.9.4) on a structure element's dict, the same `HPDF_String_New()`
+  pattern `HPDF_UA_SetAlternateText()` already uses for `/Alt`, but
+  reusing whichever "UTF-8" encoder the caller registered via
+  `HPDF_UseUTFEncodings()` (via `HPDF_Doc_FindEncoder()`, which -- unlike
+  `HPDF_GetEncoder()` -- returns NULL with no error side effect when
+  nothing is registered, so plain-ASCII callers with no UTF-8 encoder set
+  up fall back to a plain PDFDocEncoding string) so non-ASCII
+  `actual_text` (e.g. Greek letters) round-trips as real UTF-16BE instead
+  of being misread byte-for-byte.
+- Motivating case, found integrating this project into Migrate-n: even
+  after 0.6.2's real `/ToUnicode` CMap fix, a checker doing its own
+  structure-tree/marked-content text extraction (rather than linear
+  content-stream extraction the way `pdftotext` does) still reported a
+  TD/TH's content as empty whenever that content was drawn through the
+  Identity-H/CID "UTF-8" font -- `/ActualText` gives such a checker a
+  direct, tool-independent Unicode text equivalent for that element,
+  independent of how it walks (or fails to walk) the CID font's own
+  content-stream text-showing operators.
+
 ## 0.6.2 (2026-09-13) -- fix: invalid /ToUnicode CMap for UTF-8/CID fonts
 
 - `vendor/libharu/src/hpdf_font_cid.c` -- the one exception to this

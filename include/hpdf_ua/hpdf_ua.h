@@ -223,15 +223,24 @@ HPDF_EXPORT(HPDF_STATUS)
 HPDF_UA_EndArtifact (HPDF_UA_Context ctx, HPDF_Page page);
 
 /* ---------------------------------------------------------------------
- * Milestone 4 (remaining item): still a stub. Signature updated to the
- * same Context-based convention as the rest of this header for
- * consistency, even though it doesn't do anything yet.
+ * Milestone 4 (remaining item): now REAL (was a stub for a long time --
+ * the motivating case turned up in a real consumer: a checker's own
+ * structure-tree/marked-content text extraction couldn't recover any
+ * text for a TD/TH whose content was drawn through an Identity-H/CID
+ * font, even though the ToUnicode CMap on that font is spec-correct and
+ * ordinary linear text extraction (e.g. pdftotext) reads it fine).
  * ------------------------------------------------------------------- */
 
-/* STUB (wherever glyphs aren't cleanly Unicode-mappable -- flagged in
- * research as a real concern for this project's actual consumer, which
- * renders Greek letters and mathematical notation via subset/symbol
- * fonts). Sets /ActualText on a marked-content span or structure element. */
+/* REAL. Sets /ActualText on a structure element (PDF 32000-1 14.9.4),
+ * giving checkers/AT a direct, tool-independent Unicode text equivalent
+ * for that element's content -- most useful wherever glyphs aren't
+ * reliably recoverable by walking the content stream itself, such as
+ * Greek/math notation drawn via a symbol/CID font. `actual_text` may be
+ * plain ASCII or UTF-8; call HPDF_UseUTFEncodings() on `ctx`'s document
+ * first if it isn't plain ASCII (this function reuses that "UTF-8"
+ * encoder registration the same way a caller's own CID font text draws
+ * do, so the string round-trips as real UTF-16BE rather than being
+ * misread byte-for-byte as PDFDocEncoding). */
 HPDF_EXPORT(HPDF_STATUS)
 HPDF_UA_SetActualText (HPDF_UA_Context ctx, HPDF_UA_StructElem elem,
                         const char *actual_text);

@@ -39,6 +39,7 @@
 #include "hpdf_ua_private.h"
 #include "hpdf_utils.h"
 #include "hpdf_pages.h"
+#include "hpdf_doc.h"
 
 const char *
 hpdf_ua_role_name (HPDF_UA_StructType role)
@@ -439,10 +440,39 @@ HPDF_EXPORT(HPDF_STATUS)
 HPDF_UA_SetActualText (HPDF_UA_Context ctx, HPDF_UA_StructElem elem,
                         const char *actual_text)
 {
-    (void) ctx;
-    (void) elem;
-    (void) actual_text;
-    return HPDF_UA_NOT_YET_IMPLEMENTED;
+    HPDF_String s;
+    HPDF_Encoder encoder;
+
+    if (!ctx || !elem || !actual_text || elem->ctx != ctx)
+        return HPDF_INVALID_PARAMETER;
+
+    /* /ActualText must be a PDF text string (PDF 32000-1 14.9.4 + 7.9.2.2):
+     * PDFDocEncoding bytes, or UTF-16BE with a U+FEFF byte-order mark for
+     * anything PDFDocEncoding can't represent -- which is exactly the
+     * motivating case here (Greek/math glyphs drawn through a symbol/CID
+     * font with no honest PDFDocEncoding spelling). HPDF_String_New()
+     * already does that UTF-16BE-with-BOM encoding for us, the same way
+     * this library's own Type0/CID text draws do, given a real encoder;
+     * reuse whichever one the caller already registered under "UTF-8" via
+     * HPDF_UseUTFEncodings() (mirroring exactly how a caller reaches the
+     * Identity-H font it drew the glyph through in the first place).
+     * HPDF_Doc_FindEncoder() (unlike HPDF_GetEncoder()) just returns NULL
+     * with no error side effect when no such encoder is registered, so a
+     * caller passing plain ASCII actual_text with no UTF-8 encoder set up
+     * falls back to a plain PDFDocEncoding string -- matching
+     * HPDF_UA_SetAlternateText()'s own (encoder-less) behavior. */
+    encoder = HPDF_Doc_FindEncoder (ctx->pdf, "UTF-8");
+
+    s = HPDF_String_New (ctx->pdf->mmgr, actual_text, encoder);
+    if (!s)
+        return HPDF_CheckError (&ctx->pdf->error);
+
+    HPDF_Dict_RemoveElement (elem->dict, "ActualText");
+
+    if (HPDF_Dict_Add (elem->dict, "ActualText", s) != HPDF_OK)
+        return HPDF_CheckError (&ctx->pdf->error);
+
+    return HPDF_OK;
 }
 
 HPDF_EXPORT(HPDF_STATUS)
