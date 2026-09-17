@@ -53,7 +53,10 @@ passed to `HPDF_UA_BeginStructureElement()` -- values match the PDF/UA-1
 standard structure types directly (`DOCUMENT`, `SECT`, `DIV`, `P`, `H1`-`H6`,
 `L`/`LI`/`LBL`/`LBODY`, `TABLE`/`THEAD`/`TBODY`/`TFOOT`/`TR`/`TH`/`TD`,
 `FIGURE`, `FORMULA`, `CAPTION`, `LINK`, `ARTIFACT`), so no `/RoleMap` entry
-is ever needed.
+is ever needed -- **except `ANNOT`** ("Annot"), a deliberate exception:
+not an ISO 32000-1 standard type (only formally added in PDF 2.0), but
+ISO 14289-1:2014 7.18.1 requires this literal name for wrapping any
+non-Widget/PrinterMark/Link annotation, confirmed directly with veraPDF.
 
 ## Alternate text, tables, annotations
 
@@ -63,7 +66,7 @@ is ever needed.
 | `HPDF_UA_SetActualText(ctx, elem, actual_text)` | Sets `/ActualText` on `elem` (PDF 32000-1 14.9.4); UTF-8 `actual_text` needs `HPDF_UseUTFEncodings()` called on the document first. |
 | `HPDF_UA_SetTableHeaderScope(ctx, th_elem, scope)` | Sets a `/TH` element's `/Scope` (`HPDF_UA_SCOPE_ROW` / `_COLUMN` / `_BOTH`) -- simple/regular tables. |
 | `HPDF_UA_SetTableDataHeaders(...)` | **STUB.** Explicit `/TD` &rarr; `/TH` `/Headers` references for irregular tables; not needed by this project's own motivating use case (simple tables), so not built. |
-| `HPDF_UA_TagAnnotation(ctx, page, elem, annot)` | Associates a link annotation with a (typically `HPDF_UA_ROLE_LINK`) structure element via `/OBJR`, assigns it a `/StructParent` key, sets `/F` (Print set / NoView clear), and copies `elem`'s `/Alt` onto the annotation's own `/Contents` (a separate PDF/UA-1 requirement, ISO 14289-1:2014 7.18.5). |
+| `HPDF_UA_TagAnnotation(ctx, page, elem, annot)` | Associates any annotation with a structure element via `/OBJR`, assigns it a `/StructParent` key, sets `/F` (Print set / NoView clear), and copies `elem`'s `/Alt` onto the annotation's own `/Contents` if set (the separate ISO 14289-1:2014 7.18.5 requirement, Link-specific). Use `HPDF_UA_ROLE_LINK` for Link annotations, `HPDF_UA_ROLE_ANNOT` for everything else (Text/popup, etc. -- see `demo/tagged_text_annotation_demo.c`). |
 
 ## A minimal complete example
 

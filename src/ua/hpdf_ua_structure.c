@@ -21,7 +21,9 @@
  * - No /RoleMap entry is written anywhere: every HPDF_UA_StructType maps
  *   directly onto a PDF/UA-1 standard structure type name (see
  *   hpdf_ua_role_name() below), so no custom-to-standard mapping is ever
- *   needed at this milestone.
+ *   needed at this milestone -- except HPDF_UA_ROLE_ANNOT ("Annot"), a
+ *   real, deliberate exception; see that enum value's own comment in
+ *   hpdf_ua.h for why.
  * - Every failure path below routes through HPDF_CheckError()/
  *   HPDF_RaiseError() before returning, even ones this module itself
  *   detects (bad parameters, mismatched Begin/End calls) -- so an
@@ -51,6 +53,7 @@ hpdf_ua_role_name (HPDF_UA_StructType role)
         "Table", "THead", "TBody", "TFoot", "TR", "TH", "TD",
         "Figure", "Formula", "Caption",
         "Link",
+        "Annot",
         "Artifact"
     };
 

@@ -29,7 +29,7 @@ target -- see `docs/pdf_ua_requirements.md`.
 ## Status
 
 **Milestones 1-5 done, Milestone 6 (public-release prerequisites) under
-way, 2026-09-17 -- fifteen demos, thirteen of them fully PDF/UA-1
+way, 2026-09-17 -- nineteen demos, seventeen of them fully PDF/UA-1
 compliant (106/106 checks under veraPDF, "PASS," not just a lower
 failure count); CI, a CMake install target, and an API reference are
 now in place too.** See `docs/roadmap.md` for the full milestone list
@@ -41,22 +41,25 @@ PDF/UA-1 conformance), a real structure tree and marked-content tagging
 `HPDF_UA_BeginMarkedContent()`, table-header `/Scope`, figure `/Alt`,
 artifact marking, automatic `/Tabs /S`), a real document outline tied
 to each demo's actual page (including a real multi-entry outline
-tree), tagged link annotations (`HPDF_UA_TagAnnotation()`: `/OBJR`,
-`/StructParent`, `/Contents`), and an embedded font (DejaVu Sans) in
-place of never-embedded Standard-14 Helvetica. Beyond the original
-three report-shaped demos (table, histogram/figure, multi-series
-skyline plot), Milestone 6 is recreating libharu's own original demo
-set as tagged examples -- so far a TrueType font demo, a raw-image
-(`Figure`) demo, a link-annotation demo, a pie chart, a line/curve
-reference sheet, a transparency/blend-mode figure, a Standard-14 font
-list (deliberately not fully compliant -- see `demo/tagged_font_list_demo.c`),
-a text-features demo, an encoding-selection demo, and a multi-entry
-outline demo -- see `demo/` and `tests/run_all_demos.sh`, which builds
-and PDF/UA-1-validates all fifteen demos automatically (also run in CI
-on Linux and macOS for every push/PR, see `.github/workflows/ci.yml`);
-the remaining ~15 demos from libharu's own original set (CJK/Type1
-fonts, PNG/JPEG images, encryption/permissions, attachments, and
-others) are not yet ported, a known, tracked gap (see
+tree), tagged link and non-link annotations (`HPDF_UA_TagAnnotation()`:
+`/OBJR`, `/StructParent`, `/Contents`, and a real `HPDF_UA_ROLE_ANNOT`
+role for non-Link annotations per ISO 14289-1:2014 7.18.1), and an
+embedded font (DejaVu Sans) in place of never-embedded Standard-14
+Helvetica. Beyond the original three report-shaped demos (table,
+histogram/figure, multi-series skyline plot), Milestone 6 is
+recreating libharu's own original demo set as tagged examples -- so
+far a TrueType font demo, a raw-image (`Figure`) demo, a
+link-annotation demo, a pie chart, a line/curve reference sheet, a
+transparency/blend-mode figure, a Standard-14 font list (deliberately
+not fully compliant -- see `demo/tagged_font_list_demo.c`), a
+text-features demo, an encoding-selection demo, a multi-entry outline
+demo, an encrypted/permission-restricted document, a Text-annotation
+demo, a file-attachment demo, and a slide-show demo -- see `demo/` and
+`tests/run_all_demos.sh`, which builds and PDF/UA-1-validates all
+nineteen demos automatically (also run in CI on Linux and macOS for
+every push/PR, see `.github/workflows/ci.yml`); the remaining ~9 demos
+from libharu's own original set (CJK/Type1 fonts, PNG/JPEG images, and
+PDF/A conformance) are not yet ported, a known, tracked gap (see
 `docs/roadmap.md`'s Milestone 6 section). This project can also now be
 installed and consumed from another CMake project via
 `find_package(hpdf_ua)` instead of only vendored wholesale -- see
@@ -102,6 +105,10 @@ cd build
 ./tagged_text_demo      # tagged text features: size/rendering-mode/rotate/spacing/alignment (text_demo.c + text_demo2.c port)
 ./tagged_encoding_list_demo # tagged text in three encodings on one embedded font (encoding_list.c port)
 ./tagged_outline_demo   # tagged 3-page document with a multi-entry outline tree (outline_demo.c port)
+./tagged_encryption_demo # tagged, password-protected, permission-restricted document (encryption.c + permission.c port)
+./tagged_text_annotation_demo # tagged Text (popup/note) annotations (text_annotation.c port)
+./tagged_attach_demo    # tagged document with an embedded file attachment (attach.c port)
+./tagged_slide_show_demo # tagged 4-page slide show with a Next/Prev link chain (slide_show_demo.c port)
 cd ..
 ```
 
@@ -119,14 +126,14 @@ current platform decision.
 
 ## Validating output
 
-To check all fifteen demos against their recorded PDF/UA-1 baselines at
+To check all nineteen demos against their recorded PDF/UA-1 baselines at
 once (this is what CI runs):
 
 ```sh
 tests/run_all_demos.sh build
 ```
 
-Thirteen of the fifteen demos are fully PDF/UA-1 compliant -- veraPDF
+Seventeen of the nineteen demos are fully PDF/UA-1 compliant -- veraPDF
 reports 0 failed rules. Two are deliberately not, by design, not a bug,
 each with its own recorded baseline `tests/run_all_demos.sh` checks
 against instead of full compliance: `docmeta_demo` (Milestone 0

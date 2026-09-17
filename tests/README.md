@@ -3,19 +3,21 @@
 `run_all_demos.sh` -- real test coverage for this project's demo suite,
 added in Milestone 6 (see `docs/roadmap.md`). Builds every demo (the
 original five, Milestone 6's first pass -- `tagged_font_demo`,
-`tagged_image_demo`, `tagged_annotation_demo` -- and Milestone 6's
-second pass -- `tagged_arc_demo`, `tagged_line_demo`,
-`tagged_ext_gstate_demo`, `tagged_font_list_demo`, `tagged_text_demo`,
-`tagged_encoding_list_demo`, `tagged_outline_demo`), runs each one to
+`tagged_image_demo`, `tagged_annotation_demo` -- Milestone 6's second
+pass -- `tagged_arc_demo`, `tagged_line_demo`, `tagged_ext_gstate_demo`,
+`tagged_font_list_demo`, `tagged_text_demo`, `tagged_encoding_list_demo`,
+`tagged_outline_demo` -- and Milestone 6's third pass --
+`tagged_encryption_demo`, `tagged_text_annotation_demo`,
+`tagged_attach_demo`, `tagged_slide_show_demo`), runs each one to
 (re)generate its PDF, and validates every PDF against the real PDF/UA-1
 ruleset via `validate/run_verapdf.sh` -- exercising libharu's own
 TrueType-embedding, raw-image, annotation, table, path-painting, vector
-graphics, extended graphics state, text-feature, encoding, and outline
-code paths through this project's tagging layer, not just this
-project's own additions in isolation.
+graphics, extended graphics state, text-feature, encoding, outline,
+encryption, and attachment code paths through this project's tagging
+layer, not just this project's own additions in isolation.
 
 Each demo has a recorded baseline (see the `DEMOS` table inside the
-script): thirteen of the fifteen demos must reach full PDF/UA-1
+script): seventeen of the nineteen demos must reach full PDF/UA-1
 compliance (veraPDF `PASS`, 0 failed rules); two are deliberately not
 fully compliant, each with its own documented, bounded baseline:
 `docmeta_demo` is Milestone 0 scaffolding (untagged page content, a
@@ -27,6 +29,12 @@ file's own top comment). The script fails loudly (nonzero exit, one
 failed) if any demo's real veraPDF result is worse than its recorded
 baseline; it does not require the two intentionally-partial demos to
 reach full `PASS`, since that was never their scope.
+
+A `DEMOS` entry may carry a third, optional `:password` field --
+`tagged_encryption_demo.pdf` is password-protected, and veraPDF refuses
+an encrypted PDF outright ("appears to be an encrypted PDF") unless
+given its user password via `--password`, which this script passes
+through automatically for any demo whose entry has one.
 
 Usage:
 

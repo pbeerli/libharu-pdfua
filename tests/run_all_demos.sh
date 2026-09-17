@@ -56,14 +56,18 @@ fi
 echo "build OK."
 echo
 
-# name:max_failed_rules -- max_failed_rules is the recorded baseline (see
-# the header comment above): 0 for every demo this project claims is
-# fully PDF/UA-1 conformant, 3 for docmeta_demo's own documented,
-# deliberate partial scope, 2 for tagged_font_list_demo's own documented,
-# deliberate partial scope (see that file's own top comment: it exists to
-# show libharu's non-embeddable Standard-14 fonts, so ISO 14289-1:2014
-# 7.21.4.1 (fonts must be embedded) and 7.21.7 (fonts must map to
-# Unicode) are expected, not a bug).
+# name:max_failed_rules[:password] -- max_failed_rules is the recorded
+# baseline (see the header comment above): 0 for every demo this project
+# claims is fully PDF/UA-1 conformant, 3 for docmeta_demo's own
+# documented, deliberate partial scope, 2 for tagged_font_list_demo's own
+# documented, deliberate partial scope (see that file's own top comment:
+# it exists to show libharu's non-embeddable Standard-14 fonts, so ISO
+# 14289-1:2014 7.21.4.1 (fonts must be embedded) and 7.21.7 (fonts must
+# map to Unicode) are expected, not a bug). The optional third field is a
+# user password to pass to veraPDF's own --password flag -- needed only
+# for tagged_encryption_demo.pdf, which veraPDF otherwise refuses outright
+# ("appears to be an encrypted PDF") rather than reporting a rule result
+# at all.
 DEMOS=(
     "tagged_table_demo:0"
     "tagged_histogram_demo:0"
@@ -79,14 +83,17 @@ DEMOS=(
     "tagged_encoding_list_demo:0"
     "tagged_outline_demo:0"
     "tagged_font_list_demo:2"
+    "tagged_encryption_demo:0:user"
+    "tagged_text_annotation_demo:0"
+    "tagged_attach_demo:0"
+    "tagged_slide_show_demo:0"
     "docmeta_demo:3"
 )
 
 FAILURES=0
 
 for entry in "${DEMOS[@]}"; do
-    name="${entry%%:*}"
-    max_failed="${entry##*:}"
+    IFS=':' read -r name max_failed password <<< "$entry"
     binary="$BUILD_DIR/$name"
     pdf="$BUILD_DIR/$name.pdf"
 
@@ -113,7 +120,16 @@ for entry in "${DEMOS[@]}"; do
         continue
     fi
 
-    json="$(verapdf --flavour ua1 --format json "$pdf" 2>/dev/null)"
+    # Not an array: macOS's default bash (3.2) treats "${arr[@]}" as an
+    # unbound variable under `set -u` when arr is empty, even though it's
+    # declared -- confirmed directly (this script failed every demo with
+    # "password_args[@]: unbound variable" until switched to this plain
+    # if/else).
+    if [ -n "$password" ]; then
+        json="$(verapdf --flavour ua1 --format json --password "$password" "$pdf" 2>/dev/null)"
+    else
+        json="$(verapdf --flavour ua1 --format json "$pdf" 2>/dev/null)"
+    fi
     failed_rules="$(printf '%s' "$json" | grep -o '"failedRules" *: *[0-9]*' \
             | head -n1 | grep -o '[0-9]*$')"
     passed_rules="$(printf '%s' "$json" | grep -o '"passedRules" *: *[0-9]*' \

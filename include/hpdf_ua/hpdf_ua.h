@@ -111,7 +111,17 @@ typedef struct _HPDF_UA_StructElem_Rec *HPDF_UA_StructElem;
  * directly (see docs/pdf_ua_requirements.md's Role map section) rather
  * than inventing project-specific names that would then need mapping --
  * no /RoleMap entry is needed as long as only these standard types are
- * used. */
+ * used.
+ *
+ * One deliberate exception: HPDF_UA_ROLE_ANNOT ("Annot") is not an
+ * ISO 32000-1 standard structure type (it was formally added only in
+ * PDF 2.0 / ISO 32000-2) -- but ISO 14289-1:2014 7.18.1 ("An annotation,
+ * excluding annotations of subtype Widget, PrinterMark or Link, shall be
+ * nested within an Annot tag") requires the literal name "Annot", not
+ * merely any container role; confirmed directly with veraPDF while
+ * porting tagged_text_annotation_demo.c (Milestone 6): a HPDF_UA_ROLE_DIV
+ * wrapper around a Text annotation's /OBJR failed exactly this check,
+ * `HPDF_UA_ROLE_ANNOT` did not. */
 typedef enum {
     HPDF_UA_ROLE_DOCUMENT = 0,
     HPDF_UA_ROLE_SECT,
@@ -124,6 +134,7 @@ typedef enum {
     HPDF_UA_ROLE_TFOOT, HPDF_UA_ROLE_TR, HPDF_UA_ROLE_TH, HPDF_UA_ROLE_TD,
     HPDF_UA_ROLE_FIGURE, HPDF_UA_ROLE_FORMULA, HPDF_UA_ROLE_CAPTION,
     HPDF_UA_ROLE_LINK,
+    HPDF_UA_ROLE_ANNOT,
     HPDF_UA_ROLE_ARTIFACT,
     HPDF_UA_ROLE_EOF
 } HPDF_UA_StructType;

@@ -669,3 +669,38 @@ scope cut, not an oversight):
   files (a background-grid-drawing helper reused by several original
   demos, and a one-off raw-image-file generator), not demos in their
   own right -- not tracked as a remaining port.
+
+### Fourth pass, security/annotations/attachments, 2026-09-17
+
+Picked up the "security/annotations/attachments" batch the third pass's
+own list above named as needing no new dependency: `tagged_encryption_demo.c`
+(merges `encryption.c` + `permission.c`), `tagged_text_annotation_demo.c`
+(`text_annotation.c`, 4 of 8 icons), `tagged_attach_demo.c` (`attach.c`,
+attaching this project's own `CHANGES.md` rather than a new binary
+asset), and `tagged_slide_show_demo.c` (`slide_show_demo.c`, 4 of 17
+transition styles plus a real Next/Prev link chain). See `CHANGES.md`'s
+`0.6.6` entry for the full detail on each -- all 4 reach 106/106 full
+PDF/UA-1 compliance, and all 19 demos this project now ships pass or
+beat their recorded baseline.
+
+**Three real bugs found and fixed in this pass, not sought out** (see
+`CHANGES.md`'s `0.6.6` entry for the full detail on each): libharu's
+`HPDF_SetPermission()` silently clears the PDF-spec-reserved
+accessibility-extraction permission bit unless the caller explicitly
+ORs `HPDF_PERMISSION_PAD` back in; ISO 14289-1:2014 7.18.1 requires
+non-Link/Widget/PrinterMark annotations to be nested under a structure
+element literally named "Annot" (not just any container), which led to
+a real, deliberate new addition to this project's own public API --
+`HPDF_UA_ROLE_ANNOT` -- a documented exception to the "every role name
+is an ISO 32000-1 standard type" design rule, since "Annot" was only
+formally standardized in PDF 2.0; and `HPDF_AttachFile()` returns a
+`HPDF_EmbeddedFile` pointer, not a `HPDF_STATUS`, so a naive
+`!= HPDF_OK` check on it is backwards.
+
+**Remaining, explicitly deferred** (unchanged from the third pass's own
+list): images (`png_demo.c`/`image_demo.c`/`jpeg_demo.c`, needs the
+already-decided libpng dependency), CJK
+(`chfont_demo.c`/`ttfont_demo_jp.c`/`jpfont_demo.c`/`outline_demo_jp.c`/
+`character_map.c`, needs the already-decided Noto Sans CJK font), and
+`pdf_a_conformance.c` on its own (a real design question, not a batch
+item).

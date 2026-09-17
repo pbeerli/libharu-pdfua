@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(libharu-pdfua
-    VERSION 0.6.5
+    VERSION 0.6.6
     DESCRIPTION "PDF/UA-1 tagged-PDF extensions for libharu"
     LANGUAGES C)
 
@@ -126,6 +126,30 @@ if(LIBHARU_PDFUA_BUILD_DEMOS)
     add_executable(tagged_outline_demo demo/tagged_outline_demo.c)
     target_link_libraries(tagged_outline_demo PRIVATE hpdf_ua)
     target_compile_definitions(tagged_outline_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
+
+    # Milestone 6, third demo pass: security/annotations/attachments --
+    # still no new dependency or licensed asset (see docs/roadmap.md's
+    # Milestone 6 section).
+    add_executable(tagged_encryption_demo demo/tagged_encryption_demo.c)
+    target_link_libraries(tagged_encryption_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_encryption_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
+
+    add_executable(tagged_text_annotation_demo demo/tagged_text_annotation_demo.c)
+    target_link_libraries(tagged_text_annotation_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_text_annotation_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
+
+    add_executable(tagged_attach_demo demo/tagged_attach_demo.c)
+    target_link_libraries(tagged_attach_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_attach_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}"
+        HPDF_UA_DEMO_ATTACH_PATH="${CMAKE_CURRENT_SOURCE_DIR}/CHANGES.md")
+
+    add_executable(tagged_slide_show_demo demo/tagged_slide_show_demo.c)
+    target_link_libraries(tagged_slide_show_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_slide_show_demo PRIVATE
         HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
 endif()
 

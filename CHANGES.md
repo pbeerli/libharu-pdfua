@@ -4,6 +4,67 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## 0.6.6 (2026-09-17) -- Milestone 6, third demo pass: security/annotations/attachments
+
+- Ported the security/annotations/attachments batch of libharu's
+  remaining original demos, still no new dependency or licensed asset
+  (see `docs/roadmap.md`'s Milestone 6 section):
+  - `demo/tagged_encryption_demo.c` (merges `encryption.c` +
+    `permission.c`): owner/user password protection plus a restricted
+    permission set. **A real, non-obvious correctness bug found and
+    fixed along the way**: libharu's `HPDF_SetPermission()` *replaces*
+    the encryption dictionary's permission bitfield outright rather
+    than OR-ing into it (confirmed by reading `hpdf_doc.c` directly),
+    so the original demo's own `HPDF_SetPermission(pdf, HPDF_ENABLE_READ)`
+    silently clears the PDF-spec-reserved high bits that
+    `HPDF_Encrypt_Init()` sets by default -- including bit 9, "extract
+    for accessibility" (PDF 32000-1 Table 22), which readers and
+    assistive technology are supposed to always be able to rely on
+    regardless of copy-protection. This port instead calls
+    `HPDF_SetPermission(pdf, HPDF_ENABLE_READ | HPDF_PERMISSION_PAD)`.
+    Also required teaching `tests/run_all_demos.sh` to pass
+    veraPDF's own `--password` flag (an encrypted PDF is otherwise
+    refused outright -- "appears to be an encrypted PDF" -- with no
+    rule result at all, not a compliance failure); the `DEMOS` table
+    now supports an optional third `:password` field.
+  - `demo/tagged_text_annotation_demo.c` (`text_annotation.c` port,
+    scoped to 4 of the original's 8 icons): the first use of
+    `HPDF_UA_TagAnnotation()` on a non-Link annotation type. **A second
+    real gap found and fixed**: ISO 14289-1:2014 7.18.1 requires any
+    non-Widget/PrinterMark/Link annotation to be nested specifically
+    under a structure element named "Annot" -- not just any container
+    role -- confirmed directly with veraPDF (a `HPDF_UA_ROLE_DIV`
+    wrapper failed this exact check, 4 failed checks). Added a real,
+    new `HPDF_UA_ROLE_ANNOT` to `HPDF_UA_StructType`
+    (`include/hpdf_ua/hpdf_ua.h`, `src/ua/hpdf_ua_structure.c`) -- a
+    deliberate, documented exception to this project's "every role
+    name is an ISO 32000-1 standard type" rule, since "Annot" itself
+    is only formally standardized in PDF 2.0 / ISO 32000-2, but ISO
+    14289-1:2014 (based on ISO 32000-1) still requires the literal name.
+  - `demo/tagged_attach_demo.c` (`attach.c` port): a real embedded file
+    attachment (`HPDF_AttachFile()`), attaching this project's own
+    `CHANGES.md` instead of vendoring a new binary asset. **A third
+    real bug found while writing this port**: `HPDF_AttachFile()`
+    returns a `HPDF_EmbeddedFile` pointer, not a `HPDF_STATUS` -- an
+    initial `!= HPDF_OK` check on that return value is backwards (true
+    for every successful non-NULL pointer), caught by the demo
+    reporting failure on what was actually a successful attach.
+  - `demo/tagged_slide_show_demo.c` (`slide_show_demo.c` port, scoped
+    to 4 of the original's 17 transition styles): `HPDF_Page_SetSlideShow()`
+    plus a real Next/Prev tagged-link-annotation chain across all 4
+    pages, reusing `HPDF_UA_TagAnnotation()`'s existing
+    `HPDF_UA_ROLE_LINK` pattern at a larger scale (up to 2 links per
+    page) than `tagged_annotation_demo.c` exercised.
+  - All 4 verified individually via a real veraPDF run (all reach
+    106/106 full compliance) and `leaks --atExit` (0 leaks) before
+    being wired into `tests/run_all_demos.sh`. All 19 demos this
+    project now ships pass or beat their recorded baseline.
+- `character_map.c`, `chfont_demo.c`, `ttfont_demo_jp.c`,
+  `jpfont_demo.c`, `png_demo.c`, `image_demo.c`, `jpeg_demo.c`, and
+  `pdf_a_conformance.c` remain deferred to later batches (CJK font and
+  PNG dependency decisions already made but not yet implemented; see
+  `docs/roadmap.md`).
+
 ## 0.6.5 (2026-09-17) -- Milestone 6, second demo pass: 7 more tagged ports
 
 - Ported a first, no-new-dependency batch of libharu's remaining
