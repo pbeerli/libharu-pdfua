@@ -748,3 +748,37 @@ the full detail.
 `character_map.c`, needs the already-decided Noto Sans CJK font) and
 `pdf_a_conformance.c` on its own -- the only two items left in this
 section's own running list.
+
+### Seventh pass, CJK demo batch, 2026-09-17
+
+Resolved the CJK item: the project maintainer supplied two real
+TrueType (glyf-outline) CJK fonts via Google Fonts -- Noto Sans JP and
+Noto Sans SC -- after confirming upstream Noto CJK's own OTF/OTC
+releases (CFF outlines) would not work with libharu's TrueType loader.
+`demo/tagged_japanese_font_demo.c` (merges `ttfont_demo_jp.c` +
+`jpfont_demo.c` + `outline_demo_jp.c`) and `demo/tagged_chfont_demo.c`
+(`chfont_demo.c`) both reach 106/106 full PDF/UA-1 compliance -- real
+embedded CJK fonts, not the non-embedded-by-design gap
+`tagged_font_list_demo.c` already demonstrates. See `CHANGES.md`'s
+`0.7.0` entry for the full detail, including how the
+embedded-TrueType-plus-legacy-CJK-encoding mechanism was verified with
+standalone reproductions before any demo code was written.
+
+`character_map.c` (a CJK glyph-table inspection tool, not really a
+content demo in the same sense as the others) remains deliberately
+deferred -- a real, bounded, low-priority gap, not blocked on anything.
+
+**What's left for Milestone 6's own two original prerequisites**: of
+libharu's ~29 original upstream demos, 24 are now ported as tagged
+examples in this project's own `demo/` (up from the original 3
+report-shaped ones). The only two remaining: `character_map.c` (above)
+and `pdf_a_conformance.c` (its own separate item: PDF/A and PDF/UA-1
+are independent, simultaneously-satisfiable conformance standards, not
+a "compliant + non-compliant" combination -- the real integration work
+is that libharu's own PDF/A support and this project's own PDF/UA-1
+tagging each independently write `/MarkInfo`, `/StructTreeRoot`, and an
+XMP `/Metadata` stream, so porting this demo for real means teaching
+the two features to cooperate on those three shared objects instead of
+clobbering each other, a real, small integration task, not a
+straightforward port). `grid_sheet.c`/`make_rawimage.c` are upstream
+helper files, not demos, and were never tracked as a remaining port.

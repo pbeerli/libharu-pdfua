@@ -4,6 +4,47 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## 0.7.0 (2026-09-17) -- Milestone 6, CJK demo batch
+
+- Vendored two real TrueType (glyf-outline) CJK fonts:
+  `fonts/NotoSansJP-Regular.ttf` (Japanese) and
+  `fonts/NotoSansSC-Regular.ttf` (Simplified Chinese) -- the "japanese"
+  and "chinese-simplified" Google Fonts subsets, downloaded directly
+  from Google Fonts, **deliberately not** upstream Noto CJK's own
+  OTF/OTC releases, which use CFF outlines: confirmed directly, before
+  vendoring either file, that libharu's own TrueType loader
+  (`vendor/libharu/src/hpdf_fontdef_tt.c`) requires a `glyf` table and
+  would reject a CFF-flavored font outright. SIL Open Font License 1.1
+  (`fonts/NotoSansCJK-LICENSE.txt`); see `NOTICE.md`.
+- Verified the whole embedded-TrueType-plus-legacy-CJK-encoding
+  mechanism end to end with standalone reproductions *before* writing
+  any demo code (matching this project's own established practice from
+  earlier passes): loaded each font via `HPDF_LoadTTFontFromFile()`,
+  applied `HPDF_UseJPEncodings()`'s "90ms-RKSJ-H" (Shift-JIS) or
+  `HPDF_UseCNSEncodings()`'s "GBK-EUC-H" (despite the "CNS" name, this
+  encoder is actually Simplified Chinese/Adobe-GB1 -- confirmed by
+  reading `hpdf_encoder_cns.c` directly, matching upstream
+  `chfont_demo.c`'s own usage, not a bug this port introduced), and
+  confirmed correct rendering and correct `ToUnicode` round-tripping
+  with real Japanese/Chinese sample text -- no
+  `HPDF_UA_SetActualText()` turned out to be necessary.
+- `demo/tagged_japanese_font_demo.c` (merges `ttfont_demo_jp.c` +
+  `jpfont_demo.c` + `outline_demo_jp.c`'s one distinguishing feature, a
+  Japanese-titled outline entry -- all three originals are otherwise
+  "show Japanese text" variants, and this port's whole point is always
+  using a real embedded font, so there's no separate non-embedded
+  variant left to port: that gap is already covered by
+  `tagged_font_list_demo.c`): reaches 106/106 full PDF/UA-1 compliance.
+- `demo/tagged_chfont_demo.c` (`chfont_demo.c` port): two independent
+  embedded CJK fonts (Chinese and Japanese) coexisting in one tagging
+  context. Reaches 106/106 full PDF/UA-1 compliance.
+- Both verified individually via a real veraPDF run and `leaks --atExit`
+  (0 leaks) before being wired into `tests/run_all_demos.sh` (now 24
+  demos, all passing or beating their recorded baseline).
+- `character_map.c` (a CJK glyph-table inspection tool, not really a
+  content demo) remains deliberately deferred; `pdf_a_conformance.c`
+  remains its own separate item (see `docs/roadmap.md`).
+
 ## 0.6.8 (2026-09-17) -- Milestone 6, sixth demo pass: JPEG images
 
 - Ported `demo/tagged_jpeg_demo.c` (`jpeg_demo.c` port), the demo the

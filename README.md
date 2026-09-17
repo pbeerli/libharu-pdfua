@@ -29,47 +29,43 @@ target -- see `docs/pdf_ua_requirements.md`.
 ## Status
 
 **Milestones 1-5 done, Milestone 6 (public-release prerequisites) under
-way, 2026-09-17 -- twenty-two demos, twenty of them fully PDF/UA-1
-compliant (106/106 checks under veraPDF, "PASS," not just a lower
-failure count); CI, a CMake install target, and an API reference are
-now in place too.** See `docs/roadmap.md` for the full milestone list
-and `CHANGES.md` for exactly what exists right now. Real, working:
-document-level metadata (`/Lang`, `/DisplayDocTitle`,
-`/MarkInfo`+`/StructTreeRoot`, a real XMP `/Metadata` stream declaring
-PDF/UA-1 conformance), a real structure tree and marked-content tagging
-(`HPDF_UA_Context`, `HPDF_UA_BeginStructureElement()`,
-`HPDF_UA_BeginMarkedContent()`, table-header `/Scope`, figure `/Alt`,
-artifact marking, automatic `/Tabs /S`), a real document outline tied
-to each demo's actual page (including a real multi-entry outline
-tree), tagged link and non-link annotations (`HPDF_UA_TagAnnotation()`:
-`/OBJR`, `/StructParent`, `/Contents`, and a real `HPDF_UA_ROLE_ANNOT`
-role for non-Link annotations per ISO 14289-1:2014 7.18.1), and an
-embedded font (DejaVu Sans) in place of never-embedded Standard-14
-Helvetica. Beyond the original three report-shaped demos (table,
-histogram/figure, multi-series skyline plot), Milestone 6 is
-recreating libharu's own original demo set as tagged examples -- so
-far a TrueType font demo, a raw-image (`Figure`) demo, a
-link-annotation demo, a pie chart, a line/curve reference sheet, a
-transparency/blend-mode figure, a Standard-14 font list (deliberately
-not fully compliant -- see `demo/tagged_font_list_demo.c`), a
-text-features demo, an encoding-selection demo, a multi-entry outline
-demo, an encrypted/permission-restricted document, a Text-annotation
-demo, a file-attachment demo, a slide-show demo, a real PNG-image
-gallery, an image scaling/rotation/masking gallery, and a real JPEG
-photo demo -- see `demo/` and `tests/run_all_demos.sh`, which builds
-and PDF/UA-1-validates all twenty-two demos automatically (also run in
-CI on Linux and macOS for every push/PR, see
-`.github/workflows/ci.yml`); the remaining ~6 demos from libharu's own
-original set (CJK/Type1 fonts and PDF/A conformance) are not yet
-ported, a known, tracked gap (see `docs/roadmap.md`'s Milestone 6
-section). This project can also now be installed and consumed from
-another CMake project via
-`find_package(hpdf_ua)` instead of only vendored wholesale -- see
-`docs/api.md` and this README's "Using this library in your own
-project" section. Migrate integration is recommended (as a new,
-additive `report_pdf_tagged.c` backend, not a rewrite of Migrate's
-existing PDF path) -- see `docs/roadmap.md`'s Milestone 5 section;
-timing of that integration is a separate, still-open scheduling call.
+way, 2026-09-17 -- twenty-four demos, twenty-two of them fully
+PDF/UA-1 compliant (106/106 checks under veraPDF, "PASS," not just a
+lower failure count); CI, a CMake install target, and an API reference
+are now in place too.** See `docs/roadmap.md` for the full milestone
+list (pass by pass) and `CHANGES.md` for exactly what each demo
+exercises and how it was verified. Real, working: document-level
+metadata (`/Lang`, `/DisplayDocTitle`, `/MarkInfo`+`/StructTreeRoot`, a
+real XMP `/Metadata` stream declaring PDF/UA-1 conformance), a real
+structure tree and marked-content tagging (`HPDF_UA_Context`,
+`HPDF_UA_BeginStructureElement()`, `HPDF_UA_BeginMarkedContent()`,
+table-header `/Scope`, figure `/Alt`, artifact marking, automatic
+`/Tabs /S`), a real document outline (including multi-entry trees and
+CJK-encoded titles), tagged link and non-link annotations
+(`HPDF_UA_TagAnnotation()`: `/OBJR`, `/StructParent`, `/Contents`, and
+a real `HPDF_UA_ROLE_ANNOT` role for non-Link annotations per ISO
+14289-1:2014 7.18.1), and several embedded fonts (DejaVu Sans, plus
+Noto Sans JP/SC for CJK) in place of never-embedded Standard-14 fonts.
+Beyond the original three report-shaped demos (table, histogram/figure,
+multi-series skyline plot), Milestone 6 has recreated most of
+libharu's own original demo set as tagged examples -- vector graphics,
+extended graphics state, text features, encoding selection, security
+(encryption/permissions), annotations (Link and Text), file
+attachments, a slide show, PNG and JPEG images, and CJK (Japanese and
+Simplified Chinese) fonts -- see `demo/` and `tests/run_all_demos.sh`,
+which builds and PDF/UA-1-validates all twenty-four demos automatically
+(also run in CI on Linux and macOS for every push/PR, see
+`.github/workflows/ci.yml`); only a CJK glyph-table inspection tool
+(`character_map.c`) and PDF/A conformance (a real design question, not
+a straightforward port -- see `docs/roadmap.md`'s Milestone 6 section)
+remain unported. This project can also now be installed and consumed
+from another CMake project via `find_package(hpdf_ua)` instead of only
+vendored wholesale -- see `docs/api.md` and this README's "Using this
+library in your own project" section. Migrate integration is
+recommended (as a new, additive `report_pdf_tagged.c` backend, not a
+rewrite of Migrate's existing PDF path) -- see `docs/roadmap.md`'s
+Milestone 5 section; timing of that integration is a separate,
+still-open scheduling call.
 
 ## Requirements
 
@@ -121,6 +117,8 @@ cd build
 ./tagged_png_demo       # six tagged PNGSuite images, all PNG color types (png_demo.c port; needs libpng)
 ./tagged_image_transform_demo # tagged image scaling/rotation/masking gallery (image_demo.c port; needs libpng)
 ./tagged_jpeg_demo      # two tagged JPEG photographs, color and grayscale (jpeg_demo.c port)
+./tagged_japanese_font_demo # tagged, embedded Japanese TrueType font text (ttfont_demo_jp.c + jpfont_demo.c + outline_demo_jp.c port)
+./tagged_chfont_demo    # two tagged, independently embedded CJK fonts, Chinese and Japanese (chfont_demo.c port)
 cd ..
 ```
 
@@ -138,16 +136,16 @@ current platform decision.
 
 ## Validating output
 
-To check all twenty-two demos against their recorded PDF/UA-1 baselines
-at once (this is what CI runs; two of the twenty-two need libpng
+To check all twenty-four demos against their recorded PDF/UA-1 baselines
+at once (this is what CI runs; two of the twenty-four need libpng
 installed to even build, see "Requirements" above):
 
 ```sh
 tests/run_all_demos.sh build
 ```
 
-Twenty of the twenty-two demos are fully PDF/UA-1 compliant -- veraPDF
-reports 0 failed rules. Two are deliberately not, by design, not a bug,
+Twenty-two of the twenty-four demos are fully PDF/UA-1 compliant --
+veraPDF reports 0 failed rules. Two are deliberately not, by design, not a bug,
 each with its own recorded baseline `tests/run_all_demos.sh` checks
 against instead of full compliance: `docmeta_demo` (Milestone 0
 scaffolding: untagged body text and a non-embedded Standard-14 font,
@@ -189,9 +187,10 @@ libharu) if you'd rather not install anything system-wide.
 - `vendor/libharu/` -- libharu 2.4.5, unmodified (see `NOTICE.md`).
 - `include/hpdf_ua/`, `src/ua/` -- this project's own additions.
 - `demo/` -- demo programs, one per roadmap milestone's target output.
-- `fonts/` -- an embeddable demo font (DejaVu Sans; see its own
-  `DejaVuSans-LICENSE.txt`), used by the demos so their output PDFs pass
-  PDF/UA-1's embedded-fonts requirement.
+- `fonts/` -- embeddable demo fonts: DejaVu Sans (Latin; see its own
+  `DejaVuSans-LICENSE.txt`), and Noto Sans JP/SC (Japanese/Simplified
+  Chinese; `NotoSansCJK-LICENSE.txt`) -- used by the demos so their
+  output PDFs pass PDF/UA-1's embedded-fonts requirement.
 - `images/pngsuite/` -- 8 PNGSuite test images (own license, see
   `NOTICE.md`), used by `tagged_png_demo` and
   `tagged_image_transform_demo`.

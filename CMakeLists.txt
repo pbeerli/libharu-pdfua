@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(libharu-pdfua
-    VERSION 0.6.8
+    VERSION 0.7.0
     DESCRIPTION "PDF/UA-1 tagged-PDF extensions for libharu"
     LANGUAGES C)
 
@@ -215,6 +215,23 @@ if(LIBHARU_PDFUA_BUILD_DEMOS)
     target_compile_definitions(tagged_jpeg_demo PRIVATE
         HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}"
         HPDF_UA_DEMO_JPEG_DIR="${CMAKE_CURRENT_SOURCE_DIR}/images/jpeg-demo")
+
+    # Milestone 6, CJK demo batch: real embedded Japanese/Simplified-
+    # Chinese TrueType fonts (see NOTICE.md for why these specific font
+    # files, not upstream Noto CJK's own OTF/OTC releases).
+    set(HPDF_UA_DEMO_JP_FONT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/fonts/NotoSansJP-Regular.ttf")
+    set(HPDF_UA_DEMO_SC_FONT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/fonts/NotoSansSC-Regular.ttf")
+
+    add_executable(tagged_japanese_font_demo demo/tagged_japanese_font_demo.c)
+    target_link_libraries(tagged_japanese_font_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_japanese_font_demo PRIVATE
+        HPDF_UA_DEMO_JP_FONT_PATH="${HPDF_UA_DEMO_JP_FONT_PATH}")
+
+    add_executable(tagged_chfont_demo demo/tagged_chfont_demo.c)
+    target_link_libraries(tagged_chfont_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_chfont_demo PRIVATE
+        HPDF_UA_DEMO_JP_FONT_PATH="${HPDF_UA_DEMO_JP_FONT_PATH}"
+        HPDF_UA_DEMO_SC_FONT_PATH="${HPDF_UA_DEMO_SC_FONT_PATH}")
 endif()
 
 # --- tests (CTest wiring placeholder; see tests/README.md) --------------

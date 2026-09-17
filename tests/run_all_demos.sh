@@ -90,6 +90,8 @@ DEMOS=(
     "tagged_png_demo:0"
     "tagged_image_transform_demo:0"
     "tagged_jpeg_demo:0"
+    "tagged_japanese_font_demo:0"
+    "tagged_chfont_demo:0"
     "docmeta_demo:3"
 )
 

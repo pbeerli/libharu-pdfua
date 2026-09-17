@@ -62,6 +62,22 @@ CC BY 4.0 (`images/jpeg-demo/LICENSE.txt`, copied alongside) -- not the same
 license as either upstream libharu or this project (see `LICENSE`), and
 independent of both.
 
+**`fonts/NotoSansJP-Regular.ttf`, `fonts/NotoSansSC-Regular.ttf`**
+(Milestone 6, added for `demo/tagged_japanese_font_demo.c` and
+`demo/tagged_chfont_demo.c`, the CJK demo batch): the "japanese" and
+"chinese-simplified" Google Fonts subsets of Noto Sans JP and Noto Sans
+SC respectively, downloaded from Google Fonts
+(https://fonts.google.com/noto) as real TrueType (glyf-outline) builds --
+deliberately not the upstream Noto CJK project's own OTF/OTC releases,
+which use CFF outlines libharu's TrueType loader (`vendor/libharu/src/
+hpdf_fontdef_tt.c`, requires a `glyf` table) cannot parse; confirmed
+directly by inspecting both fonts' own table directories before
+vendoring either one. Licensed under the SIL Open Font License 1.1
+(`fonts/NotoSansCJK-LICENSE.txt`, copied alongside, same license text
+Google Fonts itself distributes with both families) -- the same license
+family as `fonts/DejaVuSans-LICENSE.txt`'s Arev-glyph portion, but a
+separate, independent grant covering only these two font files.
+
 # Why this project exists
 
 Migrate-n (https://github.com/pbeerli/migrate-5.0.7) generates its graphical
