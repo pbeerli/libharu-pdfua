@@ -50,6 +50,21 @@ additive `report_pdf_tagged.c` backend, not a rewrite of Migrate's
 existing PDF path) -- see `docs/roadmap.md`'s Milestone 5 section;
 timing of that integration is a separate, still-open scheduling call.
 
+## Requirements
+
+- CMake 3.16+
+- A C99 compiler
+  - **macOS**: Xcode Command Line Tools (`xcode-select --install`). If you
+    already have Xcode installed but never opened it or accepted its
+    license, `cc` will fail with "You have not agreed to the Xcode license
+    agreements" -- run `sudo xcodebuild -license` (from a real terminal,
+    not a non-interactive script) to fix that.
+  - **Linux**: gcc or clang, plus `make`.
+- Optional: zlib and libpng dev headers, auto-detected by CMake, for
+  libharu's own (unused by this project) compressed-stream/PNG support.
+- [veraPDF](https://software.verapdf.org/) (CLI or Docker) if you want to
+  validate output -- see "Validating output" below.
+
 ## Building
 
 ```sh
