@@ -15,16 +15,56 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # veraPDF is a Java tool with no simple package-manager install on
-      # most distros; Homebrew's formula (present on both ubuntu-latest
-      # and macos-latest GitHub-hosted runners) is the least-friction way
-      # to get a real `verapdf` CLI without vendoring the installer here.
-      # libpng is needed to build tagged_png_demo/tagged_image_transform_demo
+      # Homebrew is only preinstalled on macos-latest GitHub-hosted
+      # runners, not on ubuntu-latest ("brew: command not found") -- so
+      # the two OSes need different install paths for veraPDF.
+
+      # macOS: Homebrew's formula is the least-friction way to get a
+      # real `verapdf` CLI without vendoring the installer here. libpng
+      # is needed to build tagged_png_demo/tagged_image_transform_demo
       # (Milestone 6's PNG demo batch) -- CMake skips those two targets
       # gracefully if it's missing, but CI should actually build and
       # validate them, not silently skip.
-      - name: Install veraPDF and libpng
+      - name: Install veraPDF and libpng (macOS)
+        if: matrix.os == 'macos-latest'
         run: brew install verapdf libpng
+
+      # Ubuntu: veraPDF has no apt package, so install it the same way
+      # veraPDF's own official Docker image does (see veraPDF-apps'
+      # Dockerfile and docker-install.xml): download the IzPack
+      # installer and drive it non-interactively with an auto-install
+      # XML that selects only the CLI pack.
+      - name: Set up Java (Ubuntu, required by the veraPDF installer)
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install veraPDF and libpng (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update && sudo apt-get install -y libpng-dev
+          curl -fsSL -o /tmp/verapdf-installer.zip https://software.verapdf.org/releases/verapdf-installer.zip
+          unzip -q -d /tmp/verapdf-installer /tmp/verapdf-installer.zip
+          cat > /tmp/verapdf-auto-install.xml <<'EOF'
+          <AutomatedInstallation langpack="eng">
+              <com.izforge.izpack.panels.htmlhello.HTMLHelloPanel id="welcome"/>
+              <com.izforge.izpack.panels.target.TargetPanel id="install_dir">
+                  <installpath>/opt/verapdf</installpath>
+              </com.izforge.izpack.panels.target.TargetPanel>
+              <com.izforge.izpack.panels.packs.PacksPanel id="sdk_pack_select">
+                  <pack index="0" name="veraPDF GUI" selected="false"/>
+                  <pack index="1" name="veraPDF CLI" selected="true"/>
+                  <pack index="2" name="veraPDF Documentation" selected="false"/>
+                  <pack index="3" name="veraPDF Sample Plugins" selected="false"/>
+              </com.izforge.izpack.panels.packs.PacksPanel>
+              <com.izforge.izpack.panels.install.InstallPanel id="install"/>
+              <com.izforge.izpack.panels.finish.FinishPanel id="finish"/>
+          </AutomatedInstallation>
+          EOF
+          (cd /tmp/verapdf-installer/verapdf-greenfield-* && ./verapdf-install /tmp/verapdf-auto-install.xml)
+          echo "/opt/verapdf" >> "$GITHUB_PATH"
 
       - name: Configure
         run: cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
