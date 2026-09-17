@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(libharu-pdfua
-    VERSION 0.6.7
+    VERSION 0.6.8
     DESCRIPTION "PDF/UA-1 tagged-PDF extensions for libharu"
     LANGUAGES C)
 
@@ -201,6 +201,20 @@ if(LIBHARU_PDFUA_BUILD_DEMOS)
             "libpng dev headers, e.g. `brew install libpng` or "
             "`apt install libpng-dev`, and reconfigure to enable them)")
     endif()
+
+    # Milestone 6, sixth demo pass: JPEG. No new dependency (libharu
+    # embeds a JPEG's own DCT-encoded byte stream as-is, no decode), so
+    # unlike the PNG demos above this one always builds. Its two images
+    # are the project maintainer's own photographs, CC BY 4.0 licensed
+    # for this specific use (see NOTICE.md and demo/tagged_jpeg_demo.c's
+    # own top comment for why -- the original demo's own sample images
+    # had no stated license, which held this port back in the previous
+    # pass).
+    add_executable(tagged_jpeg_demo demo/tagged_jpeg_demo.c)
+    target_link_libraries(tagged_jpeg_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_jpeg_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}"
+        HPDF_UA_DEMO_JPEG_DIR="${CMAKE_CURRENT_SOURCE_DIR}/images/jpeg-demo")
 endif()
 
 # --- tests (CTest wiring placeholder; see tests/README.md) --------------

@@ -4,6 +4,32 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## 0.6.8 (2026-09-17) -- Milestone 6, sixth demo pass: JPEG images
+
+- Ported `demo/tagged_jpeg_demo.c` (`jpeg_demo.c` port), the demo the
+  previous PNG-images pass explicitly left unresolved because upstream
+  libharu's own sample JPEGs (`demo/images/rgb.jpg`/`gray.jpg`) have no
+  stated license anywhere. Resolved by the project maintainer supplying
+  two of their own photographs (`images/jpeg-demo/cactus.jpg`,
+  `dragonfly.jpg`), licensed CC BY 4.0 for this specific use (see
+  `NOTICE.md` and `images/jpeg-demo/LICENSE.txt`) -- `dragonfly.jpg` is
+  a grayscale conversion of the original, made specifically to exercise
+  libharu's separate grayscale-JPEG (`/DeviceGray`) code path, matching
+  the original demo's own rgb.jpg/gray.jpg split.
+- No new build dependency: `HPDF_LoadJpegImageFromFile()` embeds a
+  JPEG's own DCT-encoded byte stream as-is via the PDF `/DCTDecode`
+  filter, with no decode step (unlike PNG), so this demo always builds
+  regardless of `PNG_FOUND`.
+- Each photo is its own real, individually `/Alt`-described
+  `Document > Figure` (crediting the photographer directly in the
+  `/Alt` text). Reaches 106/106 full PDF/UA-1 compliance on the first
+  attempt; `leaks --atExit` clean. Wired into `tests/run_all_demos.sh`
+  (now 22 demos, all passing or beating their recorded baseline).
+- The two source photographs were resized (long edge 900px) and
+  re-encoded before vendoring, to keep the repository lean -- the
+  originals were full-resolution phone-camera photos (3-3.5MB each);
+  the vendored copies are under 250KB combined.
+
 ## 0.6.7 (2026-09-17) -- Milestone 6, fourth demo pass: PNG images
 
 - Re-enabled libpng discovery (`CMAKE_DISABLE_FIND_PACKAGE_PNG` removed

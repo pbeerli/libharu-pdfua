@@ -732,3 +732,19 @@ explicit decision to accept the risk) is decided later.
 `character_map.c`, needs the already-decided Noto Sans CJK font),
 `jpeg_demo.c` (blocked on the image-license question above), and
 `pdf_a_conformance.c` on its own.
+
+### Sixth pass, JPEG images, 2026-09-17
+
+Resolved the fifth pass's own open item: `jpeg_demo.c`'s sample images
+had no stated upstream license. The project maintainer supplied two of
+their own photographs instead, licensed CC BY 4.0 specifically for this
+use (see `NOTICE.md`). `demo/tagged_jpeg_demo.c` ported with no new
+build dependency (JPEG bytes are embedded as-is, no decode) and reaches
+106/106 full PDF/UA-1 compliance. See `CHANGES.md`'s `0.6.8` entry for
+the full detail.
+
+**Remaining, explicitly deferred**: CJK
+(`chfont_demo.c`/`ttfont_demo_jp.c`/`jpfont_demo.c`/`outline_demo_jp.c`/
+`character_map.c`, needs the already-decided Noto Sans CJK font) and
+`pdf_a_conformance.c` on its own -- the only two items left in this
+section's own running list.

@@ -1,0 +1,10 @@
+cactus.jpg and dragonfly.jpg
+
+Copyright (c) Peter Beerli. Licensed under the Creative Commons
+Attribution 4.0 International License (CC BY 4.0):
+https://creativecommons.org/licenses/by/4.0/
+
+dragonfly.jpg is a grayscale conversion of the original color
+photograph, made specifically to exercise libharu's grayscale-JPEG
+(/DeviceGray) code path in demo/tagged_jpeg_demo.c -- see that file's
+own top comment.

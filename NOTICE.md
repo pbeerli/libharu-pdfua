@@ -50,6 +50,18 @@ Permission to use, copy, and distribute these images for any purpose and
 without fee is hereby granted." Not the same license as either upstream
 libharu or this project (see `LICENSE`), and independent of both.
 
+**`images/jpeg-demo/`** (Milestone 6, added for `demo/tagged_jpeg_demo.c`,
+after an earlier pass deliberately skipped this demo -- see
+`docs/roadmap.md`'s fifth-pass entry -- because upstream libharu's own
+`demo/images/rgb.jpg`/`gray.jpg` have no stated license anywhere):
+`cactus.jpg` and `dragonfly.jpg` are two of the project maintainer's own
+photographs (resized from the originals; `dragonfly.jpg` also converted to
+grayscale to exercise libharu's separate grayscale-JPEG code path, matching
+upstream's own rgb.jpg/gray.jpg split), copyright Peter Beerli, licensed
+CC BY 4.0 (`images/jpeg-demo/LICENSE.txt`, copied alongside) -- not the same
+license as either upstream libharu or this project (see `LICENSE`), and
+independent of both.
+
 # Why this project exists
 
 Migrate-n (https://github.com/pbeerli/migrate-5.0.7) generates its graphical

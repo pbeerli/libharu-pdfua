@@ -29,7 +29,7 @@ target -- see `docs/pdf_ua_requirements.md`.
 ## Status
 
 **Milestones 1-5 done, Milestone 6 (public-release prerequisites) under
-way, 2026-09-17 -- twenty-one demos, nineteen of them fully PDF/UA-1
+way, 2026-09-17 -- twenty-two demos, twenty of them fully PDF/UA-1
 compliant (106/106 checks under veraPDF, "PASS," not just a lower
 failure count); CI, a CMake install target, and an API reference are
 now in place too.** See `docs/roadmap.md` for the full milestone list
@@ -55,15 +55,15 @@ not fully compliant -- see `demo/tagged_font_list_demo.c`), a
 text-features demo, an encoding-selection demo, a multi-entry outline
 demo, an encrypted/permission-restricted document, a Text-annotation
 demo, a file-attachment demo, a slide-show demo, a real PNG-image
-gallery, and an image scaling/rotation/masking gallery -- see `demo/`
-and `tests/run_all_demos.sh`, which builds and PDF/UA-1-validates all
-twenty-one demos automatically (also run in CI on Linux and macOS for
-every push/PR, see `.github/workflows/ci.yml`); the remaining ~7 demos
-from libharu's own original set (CJK/Type1 fonts, JPEG images -- see
-`docs/roadmap.md` for why JPEG is on hold -- and PDF/A conformance) are
-not yet ported, a known, tracked gap (see `docs/roadmap.md`'s
-Milestone 6 section). This project can also now be installed and
-consumed from another CMake project via
+gallery, an image scaling/rotation/masking gallery, and a real JPEG
+photo demo -- see `demo/` and `tests/run_all_demos.sh`, which builds
+and PDF/UA-1-validates all twenty-two demos automatically (also run in
+CI on Linux and macOS for every push/PR, see
+`.github/workflows/ci.yml`); the remaining ~6 demos from libharu's own
+original set (CJK/Type1 fonts and PDF/A conformance) are not yet
+ported, a known, tracked gap (see `docs/roadmap.md`'s Milestone 6
+section). This project can also now be installed and consumed from
+another CMake project via
 `find_package(hpdf_ua)` instead of only vendored wholesale -- see
 `docs/api.md` and this README's "Using this library in your own
 project" section. Migrate integration is recommended (as a new,
@@ -120,6 +120,7 @@ cd build
 ./tagged_slide_show_demo # tagged 4-page slide show with a Next/Prev link chain (slide_show_demo.c port)
 ./tagged_png_demo       # six tagged PNGSuite images, all PNG color types (png_demo.c port; needs libpng)
 ./tagged_image_transform_demo # tagged image scaling/rotation/masking gallery (image_demo.c port; needs libpng)
+./tagged_jpeg_demo      # two tagged JPEG photographs, color and grayscale (jpeg_demo.c port)
 cd ..
 ```
 
@@ -137,15 +138,15 @@ current platform decision.
 
 ## Validating output
 
-To check all twenty-one demos against their recorded PDF/UA-1 baselines
-at once (this is what CI runs; two of the twenty-one need libpng
+To check all twenty-two demos against their recorded PDF/UA-1 baselines
+at once (this is what CI runs; two of the twenty-two need libpng
 installed to even build, see "Requirements" above):
 
 ```sh
 tests/run_all_demos.sh build
 ```
 
-Nineteen of the twenty-one demos are fully PDF/UA-1 compliant -- veraPDF
+Twenty of the twenty-two demos are fully PDF/UA-1 compliant -- veraPDF
 reports 0 failed rules. Two are deliberately not, by design, not a bug,
 each with its own recorded baseline `tests/run_all_demos.sh` checks
 against instead of full compliance: `docmeta_demo` (Milestone 0
@@ -194,6 +195,8 @@ libharu) if you'd rather not install anything system-wide.
 - `images/pngsuite/` -- 8 PNGSuite test images (own license, see
   `NOTICE.md`), used by `tagged_png_demo` and
   `tagged_image_transform_demo`.
+- `images/jpeg-demo/` -- 2 photographs (CC BY 4.0, see `NOTICE.md`),
+  used by `tagged_jpeg_demo`.
 - `validate/` -- veraPDF wrapper script.
 - `docs/` -- the PDF/UA-1 requirements checklist, the roadmap, and the
   API reference (`docs/api.md`).

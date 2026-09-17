@@ -89,6 +89,7 @@ DEMOS=(
     "tagged_slide_show_demo:0"
     "tagged_png_demo:0"
     "tagged_image_transform_demo:0"
+    "tagged_jpeg_demo:0"
     "docmeta_demo:3"
 )
 
