@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(libharu-pdfua
-    VERSION 0.6.6
+    VERSION 0.6.7
     DESCRIPTION "PDF/UA-1 tagged-PDF extensions for libharu"
     LANGUAGES C)
 
@@ -15,14 +15,25 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 # --- vendored libharu, unmodified (see NOTICE.md) ---------------------
-# Same recipe migrate-n's own CMakeLists.txt uses to vendor this same
-# library, kept in sync deliberately: static build, no bundled PNG
-# discovery (this project doesn't need libharu's PNG/JPEG image support),
-# no bundled examples (this project has its own demos, see demo/).
+# Static build and no bundled examples still match migrate-n's own
+# CMakeLists.txt recipe for vendoring this same library. PNG discovery is
+# the one deliberate divergence from that shared recipe, added in
+# Milestone 6 (see docs/roadmap.md) once this project's own demo set
+# needed real PNG support (tagged_png_demo.c, tagged_image_transform_demo.c)
+# -- migrate-n itself still has no use for libharu's PNG/JPEG image
+# support and is unaffected by this project's own CMakeLists.txt anyway
+# (it vendors libharu separately).
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build static bundled libraries" FORCE)
-set(CMAKE_DISABLE_FIND_PACKAGE_PNG ON)
 set(LIBHPDF_EXAMPLES OFF CACHE BOOL "Do not build bundled libharu examples" FORCE)
 add_subdirectory(vendor/libharu EXCLUDE_FROM_ALL)
+
+# vendor/libharu's own find_package(PNG) result (PNG_FOUND) doesn't
+# propagate out of add_subdirectory()'s child scope -- confirmed directly
+# (a debug message(STATUS "${PNG_FOUND}") printed empty here even with
+# libpng installed) -- so call it again in this scope to gate
+# tagged_png_demo/tagged_image_transform_demo below on the same real
+# result libharu itself already found.
+find_package(PNG)
 
 # --- this project's own PDF/UA tagging module --------------------------
 add_library(hpdf_ua STATIC
@@ -34,8 +45,21 @@ add_library(hpdf_ua STATIC
 target_include_directories(hpdf_ua
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/vendor/libharu/include>
+        # The generated (${CMAKE_CURRENT_BINARY_DIR}) copy of
+        # vendor/libharu/include comes BEFORE the source-tree one,
+        # deliberately: a real, confirmed hazard while porting
+        # tagged_png_demo.c (Milestone 6) -- a stale, gitignored
+        # hpdf_config.h left behind in the source tree by an unrelated
+        # tool (migrate-n's own configure script had written one there,
+        # with NOPNG/NOJPEG defined) silently shadowed the correct,
+        # freshly-generated one, because vendor/libharu's own (unmodified,
+        # see NOTICE.md) CMakeLists.txt adds its source include dir before
+        # its binary one. We can't fix that in vendor/libharu itself, but
+        # we CAN make sure our own targets always prefer the generated
+        # header over any stray file that happens to exist in the source
+        # tree.
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/vendor/libharu/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/vendor/libharu/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 target_link_libraries(hpdf_ua PUBLIC hpdf)
@@ -151,6 +175,32 @@ if(LIBHARU_PDFUA_BUILD_DEMOS)
     target_link_libraries(tagged_slide_show_demo PRIVATE hpdf_ua)
     target_compile_definitions(tagged_slide_show_demo PRIVATE
         HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
+
+    # Milestone 6, fourth demo pass: PNG images -- the first demos in this
+    # project needing a real new dependency, libpng (see this file's own
+    # top comment on why PNG discovery is no longer disabled). Skipped
+    # gracefully, not a hard configure error, if libpng isn't available,
+    # matching this option's own "best effort" spirit for LIBHARU_PDFUA_BUILD_DEMOS.
+    if(PNG_FOUND)
+        set(HPDF_UA_DEMO_PNG_DIR "${CMAKE_CURRENT_SOURCE_DIR}/images/pngsuite")
+
+        add_executable(tagged_png_demo demo/tagged_png_demo.c)
+        target_link_libraries(tagged_png_demo PRIVATE hpdf_ua)
+        target_compile_definitions(tagged_png_demo PRIVATE
+            HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}"
+            HPDF_UA_DEMO_PNG_DIR="${HPDF_UA_DEMO_PNG_DIR}")
+
+        add_executable(tagged_image_transform_demo demo/tagged_image_transform_demo.c)
+        target_link_libraries(tagged_image_transform_demo PRIVATE hpdf_ua)
+        target_compile_definitions(tagged_image_transform_demo PRIVATE
+            HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}"
+            HPDF_UA_DEMO_PNG_DIR="${HPDF_UA_DEMO_PNG_DIR}")
+    else()
+        message(STATUS "libpng not found -- tagged_png_demo and "
+            "tagged_image_transform_demo will not be built (install "
+            "libpng dev headers, e.g. `brew install libpng` or "
+            "`apt install libpng-dev`, and reconfigure to enable them)")
+    endif()
 endif()
 
 # --- tests (CTest wiring placeholder; see tests/README.md) --------------

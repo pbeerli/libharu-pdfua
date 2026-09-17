@@ -4,6 +4,64 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## 0.6.7 (2026-09-17) -- Milestone 6, fourth demo pass: PNG images
+
+- Re-enabled libpng discovery (`CMAKE_DISABLE_FIND_PACKAGE_PNG` removed
+  from `CMakeLists.txt` -- see its own updated comment): the first real
+  new build dependency this project has taken on. `find_package(PNG)`
+  is called again in this project's own top-level `CMakeLists.txt`
+  scope (confirmed directly: `PNG_FOUND` from `vendor/libharu`'s own
+  `find_package(PNG)` call does not propagate out of
+  `add_subdirectory()`'s child scope). The two new PNG demos are gated
+  behind `if(PNG_FOUND)` with a `message(STATUS ...)` fallback, not a
+  hard configure error, if libpng isn't installed.
+- Vendored 8 test images from Willem van Schaik's PNGSuite under
+  `images/pngsuite/` (own license, separate from and independent of
+  both libharu's and this project's -- see `NOTICE.md`), covering all
+  five PNG color types.
+- `demo/tagged_png_demo.c` (`png_demo.c` port, 6 of the original's 15
+  images -- one representative bit depth per color type plus the 1-bit
+  case): each image is its own real, individually `/Alt`-described
+  `Document > Figure`.
+- `demo/tagged_image_transform_demo.c` (`image_demo.c` port, 5 of the
+  original's 7 examples -- skew is the same `HPDF_Page_Concat()`
+  mechanism as the rotation example with different matrix values, not a
+  separate code path): actual size, scaling, rotation
+  (`HPDF_Page_Concat()`+`HPDF_Page_ExecuteXObject()`), an image mask
+  (`HPDF_Image_SetMaskImage()`), and a color mask
+  (`HPDF_Image_SetColorMask()`).
+- **A real, third instance of the "stray environment artifact silently
+  shadows the real build" bug class this project has now hit (see the
+  `0.6.4` entry for the first, the system-wide `/usr/local` libharu
+  install)**: `vendor/libharu/include/hpdf_config.h` -- gitignored,
+  never committed -- had a stale copy sitting on the development
+  machine, left behind by an unrelated `migrate-n configure` run
+  (`NOPNG 1`/`NOJPEG 1` defined, header literally commented "Generated
+  by migrate-n configure"). `vendor/libharu`'s own (unmodified, see
+  `NOTICE.md`) `CMakeLists.txt` adds its source include directory
+  before its binary one, so that stale file silently shadowed the
+  correctly-generated one (`LIBHPDF_HAVE_LIBPNG` defined) -- every PNG
+  load failed with `HPDF_UNSUPPORTED_FUNC` (0x1062), traced by writing
+  a minimal standalone reproduction against the built `libhpdf.a`
+  directly rather than guessing. Fixed for this development machine by
+  removing the stale file (safe: gitignored, untracked, and simply
+  wrong), and hardened against a recurrence by reordering `hpdf_ua`'s
+  own `target_include_directories()` so the generated
+  (`CMAKE_CURRENT_BINARY_DIR`) copy of `vendor/libharu/include` is
+  searched before the source-tree one.
+- Both new demos verified individually via a real veraPDF run (both
+  reach 106/106 full compliance on the first attempt after the
+  `hpdf_config.h` fix) and `leaks --atExit` (0 leaks) before being
+  wired into `tests/run_all_demos.sh` (now 21 demos, all passing or
+  beating their recorded baseline) and CI (`brew install libpng` added
+  alongside `verapdf`).
+- `jpeg_demo.c`, the third demo in this batch's original scope, is
+  deliberately NOT ported in this pass: libharu embeds JPEG bytes
+  as-is (no decode, no new dependency), but the original demo's own
+  `demo/images/rgb.jpg`/`gray.jpg` have no stated license anywhere in
+  upstream libharu (unlike PNGSuite's own explicit README) -- left
+  unresolved rather than vendored on an unclear assumption.
+
 ## 0.6.6 (2026-09-17) -- Milestone 6, third demo pass: security/annotations/attachments
 
 - Ported the security/annotations/attachments batch of libharu's

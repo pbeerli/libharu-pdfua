@@ -19,8 +19,12 @@ jobs:
       # most distros; Homebrew's formula (present on both ubuntu-latest
       # and macos-latest GitHub-hosted runners) is the least-friction way
       # to get a real `verapdf` CLI without vendoring the installer here.
-      - name: Install veraPDF
-        run: brew install verapdf
+      # libpng is needed to build tagged_png_demo/tagged_image_transform_demo
+      # (Milestone 6's PNG demo batch) -- CMake skips those two targets
+      # gracefully if it's missing, but CI should actually build and
+      # validate them, not silently skip.
+      - name: Install veraPDF and libpng
+        run: brew install verapdf libpng
 
       - name: Configure
         run: cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo

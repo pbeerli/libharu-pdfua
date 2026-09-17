@@ -87,6 +87,8 @@ DEMOS=(
     "tagged_text_annotation_demo:0"
     "tagged_attach_demo:0"
     "tagged_slide_show_demo:0"
+    "tagged_png_demo:0"
+    "tagged_image_transform_demo:0"
     "docmeta_demo:3"
 )
 

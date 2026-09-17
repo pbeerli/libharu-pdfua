@@ -6,18 +6,21 @@ original five, Milestone 6's first pass -- `tagged_font_demo`,
 `tagged_image_demo`, `tagged_annotation_demo` -- Milestone 6's second
 pass -- `tagged_arc_demo`, `tagged_line_demo`, `tagged_ext_gstate_demo`,
 `tagged_font_list_demo`, `tagged_text_demo`, `tagged_encoding_list_demo`,
-`tagged_outline_demo` -- and Milestone 6's third pass --
+`tagged_outline_demo` -- Milestone 6's third pass --
 `tagged_encryption_demo`, `tagged_text_annotation_demo`,
-`tagged_attach_demo`, `tagged_slide_show_demo`), runs each one to
+`tagged_attach_demo`, `tagged_slide_show_demo` -- and Milestone 6's
+fourth pass -- `tagged_png_demo`, `tagged_image_transform_demo`, which
+need libpng installed, see `CMakeLists.txt`), runs each one to
 (re)generate its PDF, and validates every PDF against the real PDF/UA-1
 ruleset via `validate/run_verapdf.sh` -- exercising libharu's own
 TrueType-embedding, raw-image, annotation, table, path-painting, vector
 graphics, extended graphics state, text-feature, encoding, outline,
-encryption, and attachment code paths through this project's tagging
-layer, not just this project's own additions in isolation.
+encryption, attachment, and PNG-decoding code paths through this
+project's tagging layer, not just this project's own additions in
+isolation.
 
 Each demo has a recorded baseline (see the `DEMOS` table inside the
-script): seventeen of the nineteen demos must reach full PDF/UA-1
+script): nineteen of the twenty-one demos must reach full PDF/UA-1
 compliance (veraPDF `PASS`, 0 failed rules); two are deliberately not
 fully compliant, each with its own documented, bounded baseline:
 `docmeta_demo` is Milestone 0 scaffolding (untagged page content, a

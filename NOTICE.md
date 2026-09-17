@@ -39,6 +39,17 @@ Unix/Linux/macOS and Windows only via a POSIX-compatible layer such as WSL,
 Cygwin, or MSYS2 -- no native-Windows build path), `doc/` (Doxygen
 configuration for the upstream project's own docs).
 
+**`images/pngsuite/`** (Milestone 6, added for `demo/tagged_png_demo.c` and
+`demo/tagged_image_transform_demo.c`): 8 test images from Willem van
+Schaik's PNGSuite (http://www.schaik.com/pngsuite/), copied unmodified from
+libharu's own upstream `demo/pngsuite/` (trimmed from this project's own
+vendored copy along with the rest of `demo/`, see above -- these 8 files are
+reintroduced separately, not un-trimmed wholesale). PNGSuite's own license
+(`images/pngsuite/README`, copied alongside): "(c) Willem van Schaik, 1999.
+Permission to use, copy, and distribute these images for any purpose and
+without fee is hereby granted." Not the same license as either upstream
+libharu or this project (see `LICENSE`), and independent of both.
+
 # Why this project exists
 
 Migrate-n (https://github.com/pbeerli/migrate-5.0.7) generates its graphical

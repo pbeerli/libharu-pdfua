@@ -704,3 +704,31 @@ already-decided libpng dependency), CJK
 `character_map.c`, needs the already-decided Noto Sans CJK font), and
 `pdf_a_conformance.c` on its own (a real design question, not a batch
 item).
+
+### Fifth pass, PNG images, 2026-09-17
+
+Picked up the images batch's `png_demo.c` and `image_demo.c` (the
+already-decided libpng dependency): `demo/tagged_png_demo.c` (6 of 15
+original images, one representative bit depth per PNG color type) and
+`demo/tagged_image_transform_demo.c` (5 of 7 original examples: actual
+size, scaling, rotation, image mask, color mask). Both reach 106/106
+full PDF/UA-1 compliance. See `CHANGES.md`'s `0.6.7` entry for the full
+detail, including **a third real instance of this project's "stray
+environment artifact silently shadows the real build" bug class**
+(a stale, gitignored `vendor/libharu/include/hpdf_config.h` left behind
+by an unrelated tool, disabling PNG support silently) and the
+`target_include_directories()` reordering that hardens against a
+recurrence.
+
+`jpeg_demo.c` -- this batch's third named item -- is deliberately NOT
+ported: its two sample images (`demo/images/rgb.jpg`, `gray.jpg`) have
+no stated license anywhere in upstream libharu, unlike PNGSuite's own
+explicit README. Left open rather than resolved on an unstated
+assumption; revisit if a clearly-licensed replacement image (or an
+explicit decision to accept the risk) is decided later.
+
+**Remaining, explicitly deferred**: CJK
+(`chfont_demo.c`/`ttfont_demo_jp.c`/`jpfont_demo.c`/`outline_demo_jp.c`/
+`character_map.c`, needs the already-decided Noto Sans CJK font),
+`jpeg_demo.c` (blocked on the image-license question above), and
+`pdf_a_conformance.c` on its own.
