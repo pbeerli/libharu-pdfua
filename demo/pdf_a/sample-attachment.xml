@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A small, original sample XML file, attached by demo/tagged_pdfa_demo.c
+     to demonstrate PDF/A-3's embedded-file mechanism (AFRelationship
+     "Data"). Not a Factur-X (or any other normative XML/PDF hybrid
+     standard) document -- this project makes no claim of Factur-X
+     conformance. -->
+<sample-metadata>
+  <title>libharu-pdfua tagged-pdfa demo</title>
+  <note>This file exists only to be embedded, not to be schema-valid
+  against any external standard.</note>
+</sample-metadata>

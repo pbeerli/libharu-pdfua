@@ -4,6 +4,76 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## 0.8.0 (2026-09-17) -- Milestone 6 complete: character_map + PDF/A demos
+
+Closes out both items left in Milestone 6's demo-porting scope (see
+`docs/roadmap.md`). Of libharu's ~29 original upstream demos, this
+project now ships 26 tagged ports; the only ones left out are pure
+utility/helper files that were never demos (`grid_sheet.c`,
+`make_rawimage.c`).
+
+- `demo/tagged_character_map_demo.c` (`character_map.c` port, scoped to
+  one Shift-JIS lead byte instead of the original's dozens-of-pages
+  scan): a real glyph-table grid against the already-vendored
+  `fonts/NotoSansJP-Regular.ttf`, using `HPDF_Encoder_GetUnicode()` the
+  same way the original does to skip byte pairs the encoding doesn't
+  actually map to a glyph. **A real bug found and fixed while writing
+  this demo**: a first attempt used `HPDF_Page_TextWidth() > 0` alone
+  for that same filtering and let several `.notdef`-glyph code points
+  through (nonzero advance width, no real glyph), which veraPDF
+  correctly flagged (ISO 14289-1:2014 7.21.4.1/7.21.8); fixed by
+  switching to `HPDF_Encoder_GetUnicode()`, matching what the original
+  demo's own code actually does. Reaches 106/106 full PDF/UA-1
+  compliance.
+- `demo/tagged_pdfa_demo.c` (`pdf_a_conformance.c` port): a real,
+  genuinely dual-conformant PDF/A-3B + PDF/UA-1 document -- not just a
+  claim, verified against **both** veraPDF flavours (`ua1` and `3b`),
+  both PASS. Required real new library work, not just a port:
+  - A new, real `HPDF_UA_AddMetadataWithPDFA(pdf, pdfa_type)`
+    (`include/hpdf_ua/hpdf_ua.h`, `src/ua/hpdf_ua_metadata.c`) --
+    writes PDF/UA-1 and PDF/A identification in one XMP packet, PLUS a
+    real PDF/A Extension Schema declaration for the `pdfuaid` namespace
+    (ISO 19005-3:2012 Annex E -- required because `pdfuaid` isn't one
+    of PDF/A's own predefined schemas; confirmed directly with
+    veraPDF's `3b` flavour, ISO 19005-3:2012 6.6.2.3.1, before this
+    schema block was added), PLUS a trailer `/ID` (ISO 19005-3:2012
+    6.1.3) -- a real, independent implementation of the same
+    requirement libharu's own internal (not publicly exported)
+    `HPDF_PDFA_GenerateID()` meets, not a call to that function.
+  - Deliberately does NOT call libharu's own
+    `HPDF_SetPDFAConformance()`: confirmed by reading `hpdf_pdfa.c`
+    directly that doing so makes `HPDF_SaveToFile()` automatically
+    invoke libharu's own `HPDF_PDFA_AddXmpMetadata()` at save time,
+    unconditionally recreating a fresh, EMPTY `/StructTreeRoot` and
+    silently discarding this project's real, already-tagged one.
+    `HPDF_AppendOutputIntents()` and `HPDF_LoadIccProfileFromFile()`
+    turned out to be independent of that flag (also confirmed by
+    reading the source, not assumed) and are used directly.
+  - Real PDF/A building blocks used for real: a genuine `/OutputIntents`
+    entry (the ICC's own official, freely-redistributable sRGB profile,
+    `demo/pdf_a/sRGB2014.icc` -- see `NOTICE.md` -- not upstream
+    libharu's own unstated-license `pdf_a/device_rgb.icc`), and a real
+    embedded-file attachment (`demo/pdf_a/sample-attachment.xml`, an
+    original, non-normative sample file -- this port deliberately does
+    NOT attempt the original demo's own Factur-X e-invoicing XMP
+    extension schema, out of scope for "can PDF/A and PDF/UA-1
+    coexist").
+  - **A real, unrelated bug found via the demo's own rendered output,
+    not veraPDF**: the intro paragraph's four lines all landed on top
+    of each other -- `HPDF_Page_ShowTextNextLine()` needs
+    `HPDF_Page_SetTextLeading()` called first to know how far to
+    advance; this call was missing. Caught by rendering the PDF to an
+    image and looking at it, the same kind of check this project's own
+    demos don't always get (most were checked via veraPDF + text
+    extraction alone) -- a reminder that a validator checking tags and
+    structure doesn't catch a visual layout bug like this one.
+  - Both `leaks --atExit` clean.
+- `tests/run_all_demos.sh`: both new demos added to the `DEMOS` table
+  (now 26 demos, all passing or beating their recorded baseline). CI
+  gained a bonus step verifying `tagged_pdfa_demo.pdf`'s PDF/A-3B claim
+  specifically (`verapdf --flavour 3b`), beyond this project's own
+  stated PDF/UA-1 target.
+
 ## 0.7.0 (2026-09-17) -- Milestone 6, CJK demo batch
 
 - Vendored two real TrueType (glyf-outline) CJK fonts:

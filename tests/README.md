@@ -3,20 +3,22 @@
 `run_all_demos.sh` -- real test coverage for this project's demo suite,
 added in Milestone 6 and grown pass by pass since (see `docs/roadmap.md`
 for exactly which demo belongs to which pass, and `CHANGES.md` for what
-each one exercises). Builds every demo this project ships (24 as of
-Milestone 6's seventh pass -- `tagged_png_demo` and
+each one exercises). Builds every demo this project ships (26, as of
+Milestone 6's completion -- `tagged_png_demo` and
 `tagged_image_transform_demo` additionally need libpng installed, see
 `CMakeLists.txt`), runs each one to (re)generate its PDF, and validates
 every PDF against the real PDF/UA-1 ruleset via
 `validate/run_verapdf.sh` -- exercising libharu's own TrueType-embedding,
 raw-image, annotation, table, path-painting, vector graphics, extended
 graphics state, text-feature, encoding, outline, encryption,
-attachment, PNG-decoding, JPEG-embedding, and CJK-font code paths
-through this project's tagging layer, not just this project's own
-additions in isolation.
+attachment, PNG-decoding, JPEG-embedding, CJK-font, and PDF/A code
+paths through this project's tagging layer, not just this project's
+own additions in isolation. (`tagged_pdfa_demo.pdf`'s PDF/A-3B claim
+specifically is checked separately, in CI, with `verapdf --flavour 3b`
+-- a bonus check beyond this script's own PDF/UA-1 scope.)
 
 Each demo has a recorded baseline (see the `DEMOS` table inside the
-script): twenty-two of the twenty-four demos must reach full PDF/UA-1
+script): twenty-four of the twenty-six demos must reach full PDF/UA-1
 compliance (veraPDF `PASS`, 0 failed rules); two are deliberately not
 fully compliant, each with its own documented, bounded baseline:
 `docmeta_demo` is Milestone 0 scaffolding (untagged page content, a

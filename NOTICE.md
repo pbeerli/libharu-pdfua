@@ -78,6 +78,23 @@ Google Fonts itself distributes with both families) -- the same license
 family as `fonts/DejaVuSans-LICENSE.txt`'s Arev-glyph portion, but a
 separate, independent grant covering only these two font files.
 
+**`demo/pdf_a/sRGB2014.icc`** (Milestone 6, added for
+`demo/tagged_pdfa_demo.c`'s real `/OutputIntents` entry, a genuine PDF/A
+requirement): the International Color Consortium's own official sRGB
+profile, downloaded from a locally-installed copy of the `fpdf2` Python
+package (itself LGPL-3.0, but that license does not apply to this data
+file -- see below), not upstream libharu's own `pdf_a/device_rgb.icc`,
+whose license (if any) is unstated. The ICC's own license terms for this
+profile (`demo/pdf_a/sRGB2014-LICENSE.txt`, copied alongside, sourced
+from https://www.color.org/profiles2.xalter#license): "This profile is
+made available by the International Color Consortium, and may be
+copied, distributed, embedded, made, used, and sold without
+restriction." Independent of, and unrelated to, `fpdf2`'s own license.
+
+`demo/pdf_a/sample-attachment.xml` (also added for
+`demo/tagged_pdfa_demo.c`) is this project's own small, original file,
+not derived from anything -- no separate license entry needed.
+
 # Why this project exists
 
 Migrate-n (https://github.com/pbeerli/migrate-5.0.7) generates its graphical

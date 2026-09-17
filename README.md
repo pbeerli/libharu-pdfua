@@ -28,16 +28,17 @@ target -- see `docs/pdf_ua_requirements.md`.
 
 ## Status
 
-**Milestones 1-5 done, Milestone 6 (public-release prerequisites) under
-way, 2026-09-17 -- twenty-four demos, twenty-two of them fully
-PDF/UA-1 compliant (106/106 checks under veraPDF, "PASS," not just a
-lower failure count); CI, a CMake install target, and an API reference
-are now in place too.** See `docs/roadmap.md` for the full milestone
-list (pass by pass) and `CHANGES.md` for exactly what each demo
-exercises and how it was verified. Real, working: document-level
+**Milestones 1-6 done, 2026-09-17 -- twenty-six demos, twenty-four of
+them fully PDF/UA-1 compliant (106/106 checks under veraPDF, "PASS,"
+not just a lower failure count); CI, a CMake install target, and an API
+reference are in place too.** See `docs/roadmap.md` for the full
+milestone list (pass by pass) and `CHANGES.md` for exactly what each
+demo exercises and how it was verified. Real, working: document-level
 metadata (`/Lang`, `/DisplayDocTitle`, `/MarkInfo`+`/StructTreeRoot`, a
-real XMP `/Metadata` stream declaring PDF/UA-1 conformance), a real
-structure tree and marked-content tagging (`HPDF_UA_Context`,
+real XMP `/Metadata` stream declaring PDF/UA-1 conformance -- and,
+optionally, PDF/A conformance in the same packet, see
+`HPDF_UA_AddMetadataWithPDFA()`), a real structure tree and
+marked-content tagging (`HPDF_UA_Context`,
 `HPDF_UA_BeginStructureElement()`, `HPDF_UA_BeginMarkedContent()`,
 table-header `/Scope`, figure `/Alt`, artifact marking, automatic
 `/Tabs /S`), a real document outline (including multi-entry trees and
@@ -47,25 +48,26 @@ a real `HPDF_UA_ROLE_ANNOT` role for non-Link annotations per ISO
 14289-1:2014 7.18.1), and several embedded fonts (DejaVu Sans, plus
 Noto Sans JP/SC for CJK) in place of never-embedded Standard-14 fonts.
 Beyond the original three report-shaped demos (table, histogram/figure,
-multi-series skyline plot), Milestone 6 has recreated most of
+multi-series skyline plot), Milestone 6 recreated nearly all of
 libharu's own original demo set as tagged examples -- vector graphics,
 extended graphics state, text features, encoding selection, security
 (encryption/permissions), annotations (Link and Text), file
-attachments, a slide show, PNG and JPEG images, and CJK (Japanese and
-Simplified Chinese) fonts -- see `demo/` and `tests/run_all_demos.sh`,
-which builds and PDF/UA-1-validates all twenty-four demos automatically
-(also run in CI on Linux and macOS for every push/PR, see
-`.github/workflows/ci.yml`); only a CJK glyph-table inspection tool
-(`character_map.c`) and PDF/A conformance (a real design question, not
-a straightforward port -- see `docs/roadmap.md`'s Milestone 6 section)
-remain unported. This project can also now be installed and consumed
-from another CMake project via `find_package(hpdf_ua)` instead of only
-vendored wholesale -- see `docs/api.md` and this README's "Using this
-library in your own project" section. Migrate integration is
-recommended (as a new, additive `report_pdf_tagged.c` backend, not a
-rewrite of Migrate's existing PDF path) -- see `docs/roadmap.md`'s
-Milestone 5 section; timing of that integration is a separate,
-still-open scheduling call.
+attachments, a slide show, PNG and JPEG images, CJK (Japanese and
+Simplified Chinese) fonts, a CJK glyph-table grid, and a real,
+dual-conformant **PDF/A-3B + PDF/UA-1** document (verified against
+both veraPDF flavours, not just asserted) -- see `demo/` and
+`tests/run_all_demos.sh`, which builds and PDF/UA-1-validates all
+twenty-six demos automatically (also run in CI on Linux and macOS for
+every push/PR, see `.github/workflows/ci.yml`); only two upstream
+helper files that were never real demos (`grid_sheet.c`,
+`make_rawimage.c`) are not ported. This project can also be installed
+and consumed from another CMake project via `find_package(hpdf_ua)`
+instead of only vendored wholesale -- see `docs/api.md` and this
+README's "Using this library in your own project" section. Migrate
+integration is recommended (as a new, additive `report_pdf_tagged.c`
+backend, not a rewrite of Migrate's existing PDF path) -- see
+`docs/roadmap.md`'s Milestone 5 section; timing of that integration is
+a separate, still-open scheduling call.
 
 ## Requirements
 
@@ -119,6 +121,8 @@ cd build
 ./tagged_jpeg_demo      # two tagged JPEG photographs, color and grayscale (jpeg_demo.c port)
 ./tagged_japanese_font_demo # tagged, embedded Japanese TrueType font text (ttfont_demo_jp.c + jpfont_demo.c + outline_demo_jp.c port)
 ./tagged_chfont_demo    # two tagged, independently embedded CJK fonts, Chinese and Japanese (chfont_demo.c port)
+./tagged_character_map_demo # tagged Shift-JIS glyph-table grid against an embedded font (character_map.c port)
+./tagged_pdfa_demo      # real, dual-conformant PDF/A-3B + PDF/UA-1 document (pdf_a_conformance.c port)
 cd ..
 ```
 
@@ -136,15 +140,15 @@ current platform decision.
 
 ## Validating output
 
-To check all twenty-four demos against their recorded PDF/UA-1 baselines
-at once (this is what CI runs; two of the twenty-four need libpng
+To check all twenty-six demos against their recorded PDF/UA-1 baselines
+at once (this is what CI runs; two of the twenty-six need libpng
 installed to even build, see "Requirements" above):
 
 ```sh
 tests/run_all_demos.sh build
 ```
 
-Twenty-two of the twenty-four demos are fully PDF/UA-1 compliant --
+Twenty-four of the twenty-six demos are fully PDF/UA-1 compliant --
 veraPDF reports 0 failed rules. Two are deliberately not, by design, not a bug,
 each with its own recorded baseline `tests/run_all_demos.sh` checks
 against instead of full compliance: `docmeta_demo` (Milestone 0
@@ -152,7 +156,10 @@ scaffolding: untagged body text and a non-embedded Standard-14 font,
 "at most 3 failed rules") and `tagged_font_list_demo` (exists
 specifically to show libharu's non-embeddable Standard-14 fonts, "at
 most 2 failed rules" -- see that file's own top comment). Both are
-explained in `docs/roadmap.md`.
+explained in `docs/roadmap.md`. `tagged_pdfa_demo.pdf` additionally
+claims PDF/A-3B conformance; check that separately with
+`verapdf --flavour 3b build/tagged_pdfa_demo.pdf` (also run in CI as a
+bonus check, beyond this project's own PDF/UA-1 target).
 
 To check a single PDF by hand instead:
 
@@ -196,6 +203,9 @@ libharu) if you'd rather not install anything system-wide.
   `tagged_image_transform_demo`.
 - `images/jpeg-demo/` -- 2 photographs (CC BY 4.0, see `NOTICE.md`),
   used by `tagged_jpeg_demo`.
+- `demo/pdf_a/` -- a real, freely-redistributable sRGB ICC profile (see
+  `NOTICE.md`) and a small original sample XML file, used by
+  `tagged_pdfa_demo`.
 - `validate/` -- veraPDF wrapper script.
 - `docs/` -- the PDF/UA-1 requirements checklist, the roadmap, and the
   API reference (`docs/api.md`).

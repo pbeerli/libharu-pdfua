@@ -378,7 +378,7 @@ either way by this side project.
   a POSIX-compatible layer (WSL/Cygwin/MSYS2), matching Migrate's own current
   platform decision.
 
-## Milestone 6 -- toward a public release (recorded 2026-09-12, not started)
+## Milestone 6 -- toward a public release (recorded 2026-09-12, done 2026-09-17)
 
 Per the user's stated intent: once this project is further along, make it a
 public GitHub repository so others can use the library.
@@ -768,17 +768,36 @@ standalone reproductions before any demo code was written.
 content demo in the same sense as the others) remains deliberately
 deferred -- a real, bounded, low-priority gap, not blocked on anything.
 
-**What's left for Milestone 6's own two original prerequisites**: of
-libharu's ~29 original upstream demos, 24 are now ported as tagged
-examples in this project's own `demo/` (up from the original 3
-report-shaped ones). The only two remaining: `character_map.c` (above)
-and `pdf_a_conformance.c` (its own separate item: PDF/A and PDF/UA-1
-are independent, simultaneously-satisfiable conformance standards, not
-a "compliant + non-compliant" combination -- the real integration work
-is that libharu's own PDF/A support and this project's own PDF/UA-1
-tagging each independently write `/MarkInfo`, `/StructTreeRoot`, and an
-XMP `/Metadata` stream, so porting this demo for real means teaching
-the two features to cooperate on those three shared objects instead of
-clobbering each other, a real, small integration task, not a
-straightforward port). `grid_sheet.c`/`make_rawimage.c` are upstream
-helper files, not demos, and were never tracked as a remaining port.
+### Eighth pass, character_map + PDF/A -- Milestone 6 complete, 2026-09-17
+
+Closed out both remaining items.
+
+`demo/tagged_character_map_demo.c` (`character_map.c` port, one Shift-JIS
+lead byte instead of the original's dozens-of-pages scan): a real glyph
+grid against `fonts/NotoSansJP-Regular.ttf`. Found and fixed a real bug
+while writing it -- `HPDF_Page_TextWidth() > 0` alone is NOT a
+sufficient check for "does this byte pair map to a real glyph" (it let
+`.notdef` references through, caught by veraPDF); fixed by using
+`HPDF_Encoder_GetUnicode()` instead, matching what the original demo's
+own filtering logic actually does. Reaches 106/106 full compliance.
+
+`demo/tagged_pdfa_demo.c` (`pdf_a_conformance.c` port): a real,
+dual-conformant PDF/A-3B + PDF/UA-1 document, verified against BOTH
+veraPDF flavours (not just asserted). This is the integration work this
+section's own earlier passes flagged as "a real, small integration
+task, not a straightforward port": a new `HPDF_UA_AddMetadataWithPDFA()`
+writes both conformance IDs in one XMP packet plus a required PDF/A
+Extension Schema for the `pdfuaid` namespace and a trailer `/ID`, all
+without calling libharu's own `HPDF_SetPDFAConformance()` (confirmed by
+reading `hpdf_pdfa.c` directly that it would silently discard the real
+structure tree at save time). See `CHANGES.md`'s `0.8.0` entry for the
+full detail, including a real, unrelated layout bug (missing
+`HPDF_Page_SetTextLeading()`) caught only by rendering the output and
+looking at it, not by veraPDF.
+
+**Milestone 6 is now complete for both of its own original
+prerequisites.** Of libharu's ~29 original upstream demos, 26 are now
+ported as tagged examples in this project's own `demo/` (up from the
+original 3 report-shaped ones) -- everything except
+`grid_sheet.c`/`make_rawimage.c`, which are upstream helper files, not
+demos, and were never tracked as a remaining port.

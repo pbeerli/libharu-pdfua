@@ -92,6 +92,8 @@ DEMOS=(
     "tagged_jpeg_demo:0"
     "tagged_japanese_font_demo:0"
     "tagged_chfont_demo:0"
+    "tagged_character_map_demo:0"
+    "tagged_pdfa_demo:0"
     "docmeta_demo:3"
 )
 

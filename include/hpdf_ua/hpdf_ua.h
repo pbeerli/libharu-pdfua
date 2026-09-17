@@ -69,6 +69,36 @@ HPDF_UA_EnableTagging (HPDF_Doc pdf);
 HPDF_EXPORT(HPDF_STATUS)
 HPDF_UA_AddMetadata (HPDF_Doc pdf);
 
+/* REAL, Milestone 6 (added while porting a PDF/A + PDF/UA-1 combined
+ * demo -- see demo/tagged_pdfa_demo.c and docs/roadmap.md). Same as
+ * HPDF_UA_AddMetadata() (dc:title, pdfuaid:part 1, idempotent), but also
+ * declares PDF/A conformance (pdfaid:part/pdfaid:conformance) in the
+ * SAME XMP packet -- a real, well-formed way for one document to claim
+ * both standards at once (they are independent, simultaneously
+ * satisfiable conformance levels, not a "compliant + non-compliant"
+ * combination). Deliberately does NOT call libharu's own
+ * HPDF_SetPDFAConformance(): that function sets an internal flag which
+ * makes HPDF_SaveToFile() automatically invoke libharu's own
+ * HPDF_PDFA_AddXmpMetadata() at save time, unconditionally
+ * (re)creating a fresh, EMPTY /StructTreeRoot -- confirmed by reading
+ * hpdf_pdfa.c directly -- which would silently discard this project's
+ * real, already-populated structure tree. Call this function instead
+ * of HPDF_UA_AddMetadata() when you also want PDF/A conformance
+ * declared; the two are mutually exclusive per document (whichever
+ * runs first wins, since both are idempotent once /Metadata exists).
+ * Supports HPDF_PDFA_1A through HPDF_PDFA_3U (the "part 1-3" letter-
+ * suffixed conformance levels); HPDF_PDFA_4/4E/4F use a different XMP
+ * shape (no conformance letter) this function does not yet write.
+ * Real PDF/A conformance also needs a real /OutputIntents entry
+ * (HPDF_AppendOutputIntents() + HPDF_LoadIccProfileFromFile(), both
+ * already public libharu functions, independent of
+ * HPDF_SetPDFAConformance() and safe to call directly) -- this
+ * function only writes the XMP identification block, the same
+ * division of responsibility HPDF_UA_AddMetadata() already has for
+ * PDF/UA-1 (it doesn't set /Lang or /Tabs either). */
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_AddMetadataWithPDFA (HPDF_Doc pdf, HPDF_PDFAType pdfa_type);
+
 /* ---------------------------------------------------------------------
  * Milestone 1: structure tree / marked content. Everything below is
  * scoped to an explicit HPDF_UA_Context rather than the bare HPDF_Doc --

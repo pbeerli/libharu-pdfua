@@ -45,3 +45,10 @@ jobs:
       # downstream consumer, not just that install() runs without error.
       - name: Verify the install target (tests/test_install.sh)
         run: tests/test_install.sh build
+
+      # Bonus check beyond this project's own stated PDF/UA-1 target
+      # (see README.md's "Terminology note"): tagged_pdfa_demo.pdf
+      # claims PDF/A-3B conformance too, so verify that claim for real
+      # instead of only asserting it.
+      - name: Verify tagged_pdfa_demo.pdf's PDF/A-3B claim (bonus)
+        run: verapdf --flavour 3b build/tagged_pdfa_demo.pdf

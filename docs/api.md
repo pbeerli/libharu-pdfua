@@ -24,6 +24,7 @@ veraPDF-validated usage of every function listed here.
 | `HPDF_UA_SetDisplayDocTitle(pdf, value)` | Sets `/ViewerPreferences /DisplayDocTitle`, so viewers show `/Title` instead of the filename. |
 | `HPDF_UA_EnableTagging(pdf)` | Ensures `/MarkInfo /Marked true` and a `/StructTreeRoot` exist. Called automatically by `HPDF_UA_NewContext()`. |
 | `HPDF_UA_AddMetadata(pdf)` | Writes a minimal XMP `/Metadata` stream declaring PDF/UA-1 conformance (and `dc:title`, if set). |
+| `HPDF_UA_AddMetadataWithPDFA(pdf, pdfa_type)` | Same as `HPDF_UA_AddMetadata()`, but also declares PDF/A conformance (`pdfaid:part`/`conformance`, plus a real PDF/A Extension Schema for `pdfuaid`) in the same XMP packet, and generates a trailer `/ID`. Use this instead of libharu's own `HPDF_SetPDFAConformance()`, which would silently discard your structure tree at save time -- see `demo/tagged_pdfa_demo.c`. Supports `HPDF_PDFA_1A` through `HPDF_PDFA_3U`. |
 
 ## Tagging context and structure tree
 

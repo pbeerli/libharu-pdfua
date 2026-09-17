@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(libharu-pdfua
-    VERSION 0.7.0
+    VERSION 0.8.0
     DESCRIPTION "PDF/UA-1 tagged-PDF extensions for libharu"
     LANGUAGES C)
 
@@ -232,6 +232,23 @@ if(LIBHARU_PDFUA_BUILD_DEMOS)
     target_compile_definitions(tagged_chfont_demo PRIVATE
         HPDF_UA_DEMO_JP_FONT_PATH="${HPDF_UA_DEMO_JP_FONT_PATH}"
         HPDF_UA_DEMO_SC_FONT_PATH="${HPDF_UA_DEMO_SC_FONT_PATH}")
+
+    add_executable(tagged_character_map_demo demo/tagged_character_map_demo.c)
+    target_link_libraries(tagged_character_map_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_character_map_demo PRIVATE
+        HPDF_UA_DEMO_JP_FONT_PATH="${HPDF_UA_DEMO_JP_FONT_PATH}")
+
+    # Milestone 6, final demo: PDF/A-3B + PDF/UA-1 combined conformance
+    # (see demo/tagged_pdfa_demo.c and hpdf_ua.h's HPDF_UA_AddMetadataWithPDFA()
+    # for the real integration work this needed). No new build
+    # dependency: the ICC profile and XML attachment are both plain data
+    # files.
+    add_executable(tagged_pdfa_demo demo/tagged_pdfa_demo.c)
+    target_link_libraries(tagged_pdfa_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_pdfa_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}"
+        HPDF_UA_DEMO_ICC_PATH="${CMAKE_CURRENT_SOURCE_DIR}/demo/pdf_a/sRGB2014.icc"
+        HPDF_UA_DEMO_XML_PATH="${CMAKE_CURRENT_SOURCE_DIR}/demo/pdf_a/sample-attachment.xml")
 endif()
 
 # --- tests (CTest wiring placeholder; see tests/README.md) --------------
