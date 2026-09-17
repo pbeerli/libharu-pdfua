@@ -29,9 +29,10 @@ target -- see `docs/pdf_ua_requirements.md`.
 ## Status
 
 **Milestones 1-5 done, Milestone 6 (public-release prerequisites) under
-way, 2026-09-13 -- eight demos, all fully tagged ones at 106/106 PDF/UA-1
-checks under veraPDF ("PASS", not just a lower failure count).** See
-`docs/roadmap.md` for the full milestone list and `CHANGES.md` for
+way, 2026-09-17 -- eight demos, seven of them fully PDF/UA-1 compliant
+(106/106 checks under veraPDF, "PASS," not just a lower failure count);
+CI, a CMake install target, and an API reference are now in place too.**
+See `docs/roadmap.md` for the full milestone list and `CHANGES.md` for
 exactly what exists right now. Real, working: document-level metadata
 (`/Lang`, `/DisplayDocTitle`, `/MarkInfo`+`/StructTreeRoot`, a real XMP
 `/Metadata` stream declaring PDF/UA-1 conformance), a real structure
@@ -47,7 +48,14 @@ skyline plot), Milestone 6 started recreating libharu's own original
 demo set as tagged examples: a TrueType font demo, a raw-image
 (`Figure`) demo, and a link-annotation demo -- see `demo/` and
 `tests/run_all_demos.sh`, which builds and PDF/UA-1-validates all eight
-demos automatically. Migrate integration is recommended (as a new,
+demos automatically (also run in CI on Linux and macOS for every
+push/PR, see `.github/workflows/ci.yml`); the remaining ~22 demos from
+libharu's own original set are not yet ported, a known, tracked gap
+(see `docs/roadmap.md`'s Milestone 6 section). This project can also
+now be installed and consumed from another CMake project via
+`find_package(hpdf_ua)` instead of only vendored wholesale -- see
+`docs/api.md` and this README's "Using this library in your own
+project" section. Migrate integration is recommended (as a new,
 additive `report_pdf_tagged.c` backend, not a rewrite of Migrate's
 existing PDF path) -- see `docs/roadmap.md`'s Milestone 5 section;
 timing of that integration is a separate, still-open scheduling call.
@@ -72,15 +80,24 @@ timing of that integration is a separate, still-open scheduling call.
 ```sh
 cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build
-./build/docmeta_demo          # exercises the Milestone 0 document-metadata functions
-./build/tagged_table_demo     # produces a real, PDF/UA-1-checked tagged table
-./build/tagged_histogram_demo # produces a real, PDF/UA-1-checked tagged figure
-./build/tagged_skyline_demo   # produces a real, PDF/UA-1-checked multi-series plot
-./build/tagged_example_demo   # text + table + figure together, one document
-./build/tagged_font_demo      # embedded TrueType font, tagged text (ttfont_demo.c port)
-./build/tagged_image_demo     # tagged Figure from a raw computed image (raw_image_demo.c port)
-./build/tagged_annotation_demo # tagged link annotations (link_annotation.c port)
+cd build
+./docmeta_demo          # exercises the Milestone 0 document-metadata functions
+./tagged_table_demo     # produces a real, PDF/UA-1-checked tagged table
+./tagged_histogram_demo # produces a real, PDF/UA-1-checked tagged figure
+./tagged_skyline_demo   # produces a real, PDF/UA-1-checked multi-series plot
+./tagged_example_demo   # text + table + figure together, one document
+./tagged_font_demo      # embedded TrueType font, tagged text (ttfont_demo.c port)
+./tagged_image_demo     # tagged Figure from a raw computed image (raw_image_demo.c port)
+./tagged_annotation_demo # tagged link annotations (link_annotation.c port)
+cd ..
 ```
+
+Each demo `HPDF_SaveToFile()`s to a plain relative filename (e.g.
+`"docmeta_demo.pdf"`), so it lands wherever your shell's current
+directory is when you run it -- `cd build` first, as above, so the
+output PDFs land there instead of scattered into the repo root.
+`tests/run_all_demos.sh` (see "Validating output" below) does this
+`cd` for you automatically.
 
 Unix/Linux and macOS are the supported platforms; on Windows, build under a
 POSIX-compatible layer (WSL, Cygwin, or MSYS2) using these same instructions
@@ -89,8 +106,24 @@ current platform decision.
 
 ## Validating output
 
+To check all eight demos against their recorded PDF/UA-1 baselines at
+once (this is what CI runs):
+
 ```sh
-validate/run_verapdf.sh build/docmeta_demo.pdf
+tests/run_all_demos.sh build
+```
+
+Seven of the eight demos (everything except `docmeta_demo`) are fully
+PDF/UA-1 compliant -- veraPDF reports 0 failed rules. `docmeta_demo` is
+Milestone 0 scaffolding (see `docs/roadmap.md`): untagged body text and
+a non-embedded Standard-14 font, by design, not a bug -- its own
+recorded baseline is "at most 3 failed rules," and `tests/run_all_demos.sh`
+checks it against that baseline, not full compliance.
+
+To check a single PDF by hand instead:
+
+```sh
+validate/run_verapdf.sh build/tagged_table_demo.pdf
 ```
 
 Requires veraPDF (either a local `verapdf` CLI install from
