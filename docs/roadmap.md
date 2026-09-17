@@ -565,3 +565,48 @@ first" scope**:
   not for the untouched ~22-demo remainder (CJK fonts, encryption,
   PDF/A, attachments, etc.), which still has zero coverage in this
   project. A real, bounded gap, not a completed prerequisite.
+
+### Second pass, CI + install target + API docs, 2026-09-17
+
+Picked up three concrete public-release-readiness gaps identified while
+diagnosing a "cannot build from a fresh clone" report (see `CHANGES.md`'s
+`0.6.4` entry for the full detail on each):
+
+- **CI** (`.github/workflows/ci.yml`): builds on Linux and macOS for
+  every push/PR and runs both test scripts below. Nothing previously
+  caught a regression before a user hit it.
+- **CMake install target**: `cmake --install build` was a complete
+  no-op before this pass (zero `install()` rules anywhere in this
+  project's own `CMakeLists.txt`; `vendor/libharu`'s own were
+  `EXCLUDE_FROM_ALL`'d out along with the rest of that subdirectory).
+  Now installs `hpdf_ua` + `hpdf` + headers + a `hpdf_ua-config.cmake`
+  package config, so `find_package(hpdf_ua)` works for a downstream
+  consumer. Verified end-to-end, not just written and assumed: a new
+  `tests/test_install.sh` installs to a throwaway prefix and builds a
+  separate minimal consumer project (`tests/consume_package/`) against
+  it, now wired into CI.
+- **A real bug this work surfaced, not sought out**: fixing the install
+  target's include-directory usage requirements (`PRIVATE` &rarr;
+  `PUBLIC`/`INTERFACE` for `vendor/libharu/include`) revealed that every
+  demo's own compile had been silently resolving `hpdf.h` through an
+  unrelated, differently-versioned system-wide libharu install on the
+  development machine (`/usr/local/include`, confirmed via `cc -H`),
+  not this project's own vendored copy -- because `hpdf_ua`'s public
+  header (`hpdf_ua.h`) does `#include "hpdf.h"` but the target's own
+  include-directory usage requirements never actually exposed
+  `vendor/libharu/include` to anything outside `hpdf_ua`'s own `.c`
+  files. A genuinely clean machine (no stray libharu install) would
+  have failed every demo compile with "hpdf.h: No such file or
+  directory" -- a real, environment-dependent gap between "builds here"
+  and "builds anywhere," and plausibly the actual mechanism behind
+  reports of a fresh clone failing to build. Fixed as part of the same
+  change that makes the install target correct.
+- **API docs** (`docs/api.md`): a grouped map of every `hpdf_ua.h`
+  function plus a minimal complete example -- the demos were previously
+  the only usage documentation.
+
+Deliberately not done in this pass (see this section's own "Not done"
+list above for the pre-existing ~22-demo gap, still open): the actual
+outreach comment on libharu's own dead upstream issues (#99, #175) is
+being held until Milestone 6's remaining demo-coverage work is further
+along, a separate, later decision.

@@ -46,3 +46,21 @@ full veraPDF run -- e.g. `qpdf --qdf --object-streams=disable` the
 output and grep the plain-text QDF form for the expected catalog
 entries -- not currently implemented, since `run_all_demos.sh`'s real
 veraPDF run already covers this project's actual verification bar.
+
+`test_install.sh` -- verifies the CMake install target (see
+`CMakeLists.txt`'s "installation" section) actually works end-to-end for
+a downstream consumer, not just that `cmake --install` runs without
+error: it installs to a throwaway prefix, then configures and builds
+`consume_package/` (a minimal separate CMake project) against that
+install with `find_package(hpdf_ua)`, and runs the resulting binary.
+
+```
+tests/test_install.sh build
+```
+
+`consume_package/` is that minimal consumer project; it is not
+`add_subdirectory()`-ed into the main build, only built by
+`test_install.sh` against an installed tree.
+
+Both scripts run in CI (`.github/workflows/ci.yml`) on every push and
+pull request, on Linux and macOS.

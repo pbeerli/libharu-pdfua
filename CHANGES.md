@@ -4,6 +4,56 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## 0.6.4 (2026-09-17) -- CI, CMake install target, API reference
+
+- Added `.github/workflows/ci.yml`: builds on Linux and macOS for every
+  push/PR, installs veraPDF via Homebrew, and runs both
+  `tests/run_all_demos.sh` (PDF/UA-1 regression coverage) and the new
+  `tests/test_install.sh` below.
+- Added a real CMake install target: `cmake --install build` now
+  installs `hpdf_ua` (and the vendored `hpdf` it depends on) plus a
+  `hpdf_ua-config.cmake` package config, so a downstream project can
+  `find_package(hpdf_ua)` and link `hpdf_ua::hpdf_ua` instead of
+  vendoring this whole tree. Previously there were zero `install()`
+  rules anywhere in this project's own `CMakeLists.txt`, and
+  `vendor/libharu`'s own (EXCLUDE_FROM_ALL) install rules never ran --
+  confirmed directly: `cmake --install build` was a complete no-op
+  before this change.
+- **A real, latent build bug found and fixed along the way, unrelated
+  to installation itself**: `hpdf_ua`'s target include directories only
+  ever exposed `vendor/libharu/include` as `PRIVATE` (for compiling
+  `hpdf_ua`'s own `.c` files), never `PUBLIC`/`INTERFACE` -- even though
+  `include/hpdf_ua/hpdf_ua.h` itself does `#include "hpdf.h"` and is a
+  public header every consumer (including this project's own `demo/`
+  programs) includes directly. This "worked" on the development machine
+  only because of an unrelated, differently-versioned system-wide
+  libharu install at `/usr/local/include` that the compiler's default
+  search path silently fell back to (confirmed with `cc -H`) -- on a
+  clean machine with no such stray install, every demo would fail to
+  compile with "hpdf.h: No such file or directory", a real,
+  environment-dependent "works on my machine" gap between the vendored
+  and whatever-happens-to-be-installed libharu. Fixed by making
+  `hpdf_ua`'s vendor include directories `PUBLIC` (via
+  `BUILD_INTERFACE`/`INSTALL_INTERFACE` generator expressions, so both
+  the in-tree build and an installed package get the right headers).
+  Confirmed via `compile_commands.json`: demo compile commands now
+  explicitly carry `vendor/libharu/include`, independent of whatever
+  else is or isn't installed system-wide.
+- Added `tests/test_install.sh` and `tests/consume_package/` (a minimal
+  separate CMake project, not part of the main build): installs to a
+  throwaway prefix, configures and builds `consume_package` against it
+  with `find_package(hpdf_ua)`, and runs the resulting binary -- proving
+  the install target actually works end-to-end, not just that
+  `cmake --install` exits zero. Verified directly before being wired
+  into CI.
+- Added `docs/api.md`: a grouped map of every function in `hpdf_ua.h`
+  plus a minimal complete usage example, since the demos were previously
+  the only usage documentation.
+- README: added a "Requirements" section (CMake/compiler prerequisites,
+  including the macOS Xcode-license gotcha that blocks `cc` entirely
+  until `sudo xcodebuild -license` is accepted) and a "Using this
+  library in your own project" section covering the new install target.
+
 ## 0.6.3 (2026-09-14) -- implement HPDF_UA_SetActualText() (was a stub)
 
 - `HPDF_UA_SetActualText()` had been a documented no-op stub since

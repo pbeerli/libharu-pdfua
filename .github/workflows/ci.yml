@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # veraPDF is a Java tool with no simple package-manager install on
+      # most distros; Homebrew's formula (present on both ubuntu-latest
+      # and macos-latest GitHub-hosted runners) is the least-friction way
+      # to get a real `verapdf` CLI without vendoring the installer here.
+      - name: Install veraPDF
+        run: brew install verapdf
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+
+      - name: Build
+        run: cmake --build build
+
+      # The real PDF/UA-1 test suite: builds (already done above, but the
+      # script re-checks) every demo, regenerates its PDF, and validates
+      # each one against its recorded veraPDF baseline (see
+      # tests/README.md). Fails loudly, naming the demo, on any
+      # regression.
+      - name: Validate all demos against PDF/UA-1 (tests/run_all_demos.sh)
+        run: tests/run_all_demos.sh build
+
+      # Proves the CMake install target (`cmake --install` +
+      # `find_package(hpdf_ua)`) actually works end-to-end for a
+      # downstream consumer, not just that install() runs without error.
+      - name: Verify the install target (tests/test_install.sh)
+        run: tests/test_install.sh build

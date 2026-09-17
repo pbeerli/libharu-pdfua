@@ -1,12 +1,14 @@
 cmake_minimum_required(VERSION 3.16)
 project(libharu-pdfua
-    VERSION 0.1.0
+    VERSION 0.6.4
     DESCRIPTION "PDF/UA-1 tagged-PDF extensions for libharu"
     LANGUAGES C)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+include(GNUInstallDirs)
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type" FORCE)
@@ -32,9 +34,9 @@ add_library(hpdf_ua STATIC
 target_include_directories(hpdf_ua
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    PRIVATE
-        vendor/libharu/include
-        ${CMAKE_CURRENT_BINARY_DIR}/vendor/libharu/include
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/vendor/libharu/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/vendor/libharu/include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 target_link_libraries(hpdf_ua PUBLIC hpdf)
 
@@ -94,3 +96,56 @@ enable_testing()
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt")
     add_subdirectory(tests)
 endif()
+
+# --- installation ---------------------------------------------------------
+# Lets a downstream project do `find_package(hpdf_ua)` and link
+# `hpdf_ua::hpdf_ua` instead of vendoring this whole tree itself. `hpdf`
+# (vendor/libharu's own target) is exported in the same set since hpdf_ua
+# links it PUBLICly -- CMake requires every target a target's usage
+# requirements point at to belong to some export set too. Both this
+# project's own header and libharu's headers land flat under
+# CMAKE_INSTALL_INCLUDEDIR (matching libharu's own upstream install
+# convention, since hpdf_ua.h itself does `#include "hpdf.h"` expecting it
+# on the plain include path, not a subdirectory).
+install(TARGETS hpdf
+    EXPORT hpdf_ua-targets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+install(DIRECTORY vendor/libharu/include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.h"
+)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/vendor/libharu/include/hpdf_config.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(TARGETS hpdf_ua
+    EXPORT hpdf_ua-targets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+install(FILES include/hpdf_ua/hpdf_ua.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/hpdf_ua
+)
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/hpdf_ua-config-version.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+configure_package_config_file(
+    cmake/hpdf_ua-config.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/hpdf_ua-config.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/hpdf_ua
+)
+install(EXPORT hpdf_ua-targets
+    FILE hpdf_ua-targets.cmake
+    NAMESPACE hpdf_ua::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/hpdf_ua
+)
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/hpdf_ua-config.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/hpdf_ua-config-version.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/hpdf_ua
+)

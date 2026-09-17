@@ -1,5 +1,7 @@
 # libharu-pdfua
 
+[![CI](https://github.com/pbeerli/libharu-pdfua/actions/workflows/ci.yml/badge.svg)](https://github.com/pbeerli/libharu-pdfua/actions/workflows/ci.yml)
+
 Tagged-PDF (PDF/UA-1 / ISO 14289-1) extensions for [libharu](https://github.com/libharu/libharu),
 built as a small, generic module on top of an unmodified vendored copy of
 the library -- no dependency on any particular application.
@@ -96,6 +98,23 @@ https://software.verapdf.org/, or Docker -- the script falls back to the
 published `verapdf/cli` image automatically). See
 `docs/pdf_ua_requirements.md` for what's actually being checked.
 
+## Using this library in your own project
+
+```sh
+cmake --install build --prefix /your/chosen/prefix
+```
+
+then, from your own project's `CMakeLists.txt`:
+
+```cmake
+find_package(hpdf_ua REQUIRED)
+target_link_libraries(your_target PRIVATE hpdf_ua::hpdf_ua)
+```
+
+See `docs/api.md` for the full API reference and a minimal complete
+example, or vendor this whole tree (as this project itself does with
+libharu) if you'd rather not install anything system-wide.
+
 ## Layout
 
 - `vendor/libharu/` -- libharu 2.4.5, unmodified (see `NOTICE.md`).
@@ -105,10 +124,14 @@ published `verapdf/cli` image automatically). See
   `DejaVuSans-LICENSE.txt`), used by the demos so their output PDFs pass
   PDF/UA-1's embedded-fonts requirement.
 - `validate/` -- veraPDF wrapper script.
-- `docs/` -- the PDF/UA-1 requirements checklist and the roadmap.
+- `docs/` -- the PDF/UA-1 requirements checklist, the roadmap, and the
+  API reference (`docs/api.md`).
 - `tests/` -- `run_all_demos.sh`: builds every demo and validates each
   against veraPDF, asserting each one matches or beats its recorded
-  PDF/UA-1 baseline.
+  PDF/UA-1 baseline. `test_install.sh`: verifies the CMake install
+  target and `find_package(hpdf_ua)` actually work end-to-end.
+- `.github/workflows/ci.yml` -- runs both test scripts above on Linux
+  and macOS for every push/PR.
 
 ## License
 
