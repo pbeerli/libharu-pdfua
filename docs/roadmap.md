@@ -610,3 +610,62 @@ list above for the pre-existing ~22-demo gap, still open): the actual
 outreach comment on libharu's own dead upstream issues (#99, #175) is
 being held until Milestone 6's remaining demo-coverage work is further
 along, a separate, later decision.
+
+### Third pass, 7 more tagged demos (vector graphics, text/font
+features, outline), 2026-09-17
+
+Picked up the largest remaining slice of the ~22-demo gap this
+section's first pass explicitly deferred, split into batches by the
+user's own request rather than ported all at once, matching this
+project's "handful first" discipline. This batch: everything portable
+with **no new dependency and no new licensed asset** --
+`demo/tagged_arc_demo.c`, `demo/tagged_line_demo.c`,
+`demo/tagged_ext_gstate_demo.c`, `demo/tagged_font_list_demo.c`,
+`demo/tagged_text_demo.c`, `demo/tagged_encoding_list_demo.c`, and
+`demo/tagged_outline_demo.c` -- see `CHANGES.md`'s `0.6.5` entry for
+what each one exercises and how it was verified (6 of 7 reach
+106/106-check full PDF/UA-1 compliance on the first attempt;
+`tagged_font_list_demo` at its own documented, deliberate 2-failed-rule
+baseline, the same non-embedded-Standard-14-font gap `docmeta_demo`
+already has). All 15 demos this project now ships are wired into
+`tests/run_all_demos.sh` and pass or beat their recorded baseline; all
+7 new ones confirmed `leaks --atExit` clean.
+
+Two design calls the user made explicitly before this batch started
+(see this conversation's own record, not re-litigated here): PNG
+demos will get a real libpng dependency when their batch comes up
+(reversing this project's current `CMAKE_DISABLE_FIND_PACKAGE_PNG ON`),
+and the CJK-font demos will get a real embedded font (Noto Sans CJK,
+OFL-licensed) rather than porting them non-compliant.
+
+**Remaining, explicitly deferred to later batches** (this pass's own
+scope cut, not an oversight):
+- **Images** (needs the libpng decision above): `png_demo.c`,
+  `image_demo.c`. `jpeg_demo.c` needs no new dependency (libharu embeds
+  JPEG bytes as-is, no decode) but does need the two bundled JPEG
+  assets (`demo/images/rgb.jpg`, `gray.jpg`) vendored with their own
+  license check -- grouped with the PNG batch since it's the same
+  "images" slice, not because it shares PNG's dependency.
+- **CJK** (needs the Noto Sans CJK decision above): `chfont_demo.c`,
+  `ttfont_demo_jp.c`, `jpfont_demo.c`, `outline_demo_jp.c`,
+  `character_map.c` (a CJK glyph-table inspection tool, takes an
+  encoding name as a command-line argument -- grouped here since it is
+  fundamentally a CJK-font tool, not because it itself needs the new
+  font, though using it well benefits from one).
+- **Security/annotations/attachments**: `encryption.c`, `permission.c`,
+  `text_annotation.c` (needs no new API --
+  `HPDF_UA_TagAnnotation()` already works with any annotation role, not
+  just `HPDF_UA_ROLE_LINK`, per its own doc comment), `attach.c` (needs
+  a small file to attach -- an existing project doc would do, no new
+  asset), `slide_show_demo.c`. No new dependency needed for any of
+  these; deferred purely for batch-size discipline, not a real blocker.
+- **`pdf_a_conformance.c`**: deliberately separated out rather than
+  grouped with any batch above -- combining PDF/A conformance
+  switching with this project's own PDF/UA-1 tagging in one document
+  is a real design question (two conformance regimes' metadata/
+  structure requirements interacting), not just a porting exercise,
+  and deserves its own dedicated pass.
+- `grid_sheet.c`/`make_rawimage.c` are original libharu helper/utility
+  files (a background-grid-drawing helper reused by several original
+  demos, and a one-off raw-image-file generator), not demos in their
+  own right -- not tracked as a remaining port.

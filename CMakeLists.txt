@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(libharu-pdfua
-    VERSION 0.6.4
+    VERSION 0.6.5
     DESCRIPTION "PDF/UA-1 tagged-PDF extensions for libharu"
     LANGUAGES C)
 
@@ -88,6 +88,44 @@ if(LIBHARU_PDFUA_BUILD_DEMOS)
     add_executable(tagged_annotation_demo demo/tagged_annotation_demo.c)
     target_link_libraries(tagged_annotation_demo PRIVATE hpdf_ua)
     target_compile_definitions(tagged_annotation_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
+
+    # Milestone 6, second demo pass: tagged ports of a first, no-new-
+    # dependency batch of libharu's remaining original demos (see
+    # docs/roadmap.md's Milestone 6 section) -- vector graphics, extended
+    # graphics state, the Standard-14 font list, text features, encoding
+    # selection, and a multi-entry document outline.
+    add_executable(tagged_arc_demo demo/tagged_arc_demo.c)
+    target_link_libraries(tagged_arc_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_arc_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
+
+    add_executable(tagged_line_demo demo/tagged_line_demo.c)
+    target_link_libraries(tagged_line_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_line_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
+
+    add_executable(tagged_ext_gstate_demo demo/tagged_ext_gstate_demo.c)
+    target_link_libraries(tagged_ext_gstate_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_ext_gstate_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
+
+    add_executable(tagged_font_list_demo demo/tagged_font_list_demo.c)
+    target_link_libraries(tagged_font_list_demo PRIVATE hpdf_ua)
+
+    add_executable(tagged_text_demo demo/tagged_text_demo.c)
+    target_link_libraries(tagged_text_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_text_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
+
+    add_executable(tagged_encoding_list_demo demo/tagged_encoding_list_demo.c)
+    target_link_libraries(tagged_encoding_list_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_encoding_list_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
+
+    add_executable(tagged_outline_demo demo/tagged_outline_demo.c)
+    target_link_libraries(tagged_outline_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_outline_demo PRIVATE
         HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
 endif()
 

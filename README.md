@@ -29,30 +29,36 @@ target -- see `docs/pdf_ua_requirements.md`.
 ## Status
 
 **Milestones 1-5 done, Milestone 6 (public-release prerequisites) under
-way, 2026-09-17 -- eight demos, seven of them fully PDF/UA-1 compliant
-(106/106 checks under veraPDF, "PASS," not just a lower failure count);
-CI, a CMake install target, and an API reference are now in place too.**
-See `docs/roadmap.md` for the full milestone list and `CHANGES.md` for
-exactly what exists right now. Real, working: document-level metadata
-(`/Lang`, `/DisplayDocTitle`, `/MarkInfo`+`/StructTreeRoot`, a real XMP
-`/Metadata` stream declaring PDF/UA-1 conformance), a real structure
-tree and marked-content tagging (`HPDF_UA_Context`,
-`HPDF_UA_BeginStructureElement()`, `HPDF_UA_BeginMarkedContent()`,
-table-header `/Scope`, figure `/Alt`, artifact marking, automatic
-`/Tabs /S`), a real document outline tied to each demo's actual page,
-tagged link annotations (`HPDF_UA_TagAnnotation()`: `/OBJR`,
+way, 2026-09-17 -- fifteen demos, thirteen of them fully PDF/UA-1
+compliant (106/106 checks under veraPDF, "PASS," not just a lower
+failure count); CI, a CMake install target, and an API reference are
+now in place too.** See `docs/roadmap.md` for the full milestone list
+and `CHANGES.md` for exactly what exists right now. Real, working:
+document-level metadata (`/Lang`, `/DisplayDocTitle`,
+`/MarkInfo`+`/StructTreeRoot`, a real XMP `/Metadata` stream declaring
+PDF/UA-1 conformance), a real structure tree and marked-content tagging
+(`HPDF_UA_Context`, `HPDF_UA_BeginStructureElement()`,
+`HPDF_UA_BeginMarkedContent()`, table-header `/Scope`, figure `/Alt`,
+artifact marking, automatic `/Tabs /S`), a real document outline tied
+to each demo's actual page (including a real multi-entry outline
+tree), tagged link annotations (`HPDF_UA_TagAnnotation()`: `/OBJR`,
 `/StructParent`, `/Contents`), and an embedded font (DejaVu Sans) in
 place of never-embedded Standard-14 Helvetica. Beyond the original
 three report-shaped demos (table, histogram/figure, multi-series
-skyline plot), Milestone 6 started recreating libharu's own original
-demo set as tagged examples: a TrueType font demo, a raw-image
-(`Figure`) demo, and a link-annotation demo -- see `demo/` and
-`tests/run_all_demos.sh`, which builds and PDF/UA-1-validates all eight
-demos automatically (also run in CI on Linux and macOS for every
-push/PR, see `.github/workflows/ci.yml`); the remaining ~22 demos from
-libharu's own original set are not yet ported, a known, tracked gap
-(see `docs/roadmap.md`'s Milestone 6 section). This project can also
-now be installed and consumed from another CMake project via
+skyline plot), Milestone 6 is recreating libharu's own original demo
+set as tagged examples -- so far a TrueType font demo, a raw-image
+(`Figure`) demo, a link-annotation demo, a pie chart, a line/curve
+reference sheet, a transparency/blend-mode figure, a Standard-14 font
+list (deliberately not fully compliant -- see `demo/tagged_font_list_demo.c`),
+a text-features demo, an encoding-selection demo, and a multi-entry
+outline demo -- see `demo/` and `tests/run_all_demos.sh`, which builds
+and PDF/UA-1-validates all fifteen demos automatically (also run in CI
+on Linux and macOS for every push/PR, see `.github/workflows/ci.yml`);
+the remaining ~15 demos from libharu's own original set (CJK/Type1
+fonts, PNG/JPEG images, encryption/permissions, attachments, and
+others) are not yet ported, a known, tracked gap (see
+`docs/roadmap.md`'s Milestone 6 section). This project can also now be
+installed and consumed from another CMake project via
 `find_package(hpdf_ua)` instead of only vendored wholesale -- see
 `docs/api.md` and this README's "Using this library in your own
 project" section. Migrate integration is recommended (as a new,
@@ -89,6 +95,13 @@ cd build
 ./tagged_font_demo      # embedded TrueType font, tagged text (ttfont_demo.c port)
 ./tagged_image_demo     # tagged Figure from a raw computed image (raw_image_demo.c port)
 ./tagged_annotation_demo # tagged link annotations (link_annotation.c port)
+./tagged_arc_demo       # tagged pie chart (arc_demo.c port)
+./tagged_line_demo      # tagged line/dash/cap/join/curve reference sheet (line_demo.c port)
+./tagged_ext_gstate_demo # tagged transparency/blend-mode figure (ext_gstate_demo.c port)
+./tagged_font_list_demo # tagged Standard-14 font list (font_demo.c port; deliberately not fully compliant, see file header)
+./tagged_text_demo      # tagged text features: size/rendering-mode/rotate/spacing/alignment (text_demo.c + text_demo2.c port)
+./tagged_encoding_list_demo # tagged text in three encodings on one embedded font (encoding_list.c port)
+./tagged_outline_demo   # tagged 3-page document with a multi-entry outline tree (outline_demo.c port)
 cd ..
 ```
 
@@ -106,19 +119,22 @@ current platform decision.
 
 ## Validating output
 
-To check all eight demos against their recorded PDF/UA-1 baselines at
+To check all fifteen demos against their recorded PDF/UA-1 baselines at
 once (this is what CI runs):
 
 ```sh
 tests/run_all_demos.sh build
 ```
 
-Seven of the eight demos (everything except `docmeta_demo`) are fully
-PDF/UA-1 compliant -- veraPDF reports 0 failed rules. `docmeta_demo` is
-Milestone 0 scaffolding (see `docs/roadmap.md`): untagged body text and
-a non-embedded Standard-14 font, by design, not a bug -- its own
-recorded baseline is "at most 3 failed rules," and `tests/run_all_demos.sh`
-checks it against that baseline, not full compliance.
+Thirteen of the fifteen demos are fully PDF/UA-1 compliant -- veraPDF
+reports 0 failed rules. Two are deliberately not, by design, not a bug,
+each with its own recorded baseline `tests/run_all_demos.sh` checks
+against instead of full compliance: `docmeta_demo` (Milestone 0
+scaffolding: untagged body text and a non-embedded Standard-14 font,
+"at most 3 failed rules") and `tagged_font_list_demo` (exists
+specifically to show libharu's non-embeddable Standard-14 fonts, "at
+most 2 failed rules" -- see that file's own top comment). Both are
+explained in `docs/roadmap.md`.
 
 To check a single PDF by hand instead:
 

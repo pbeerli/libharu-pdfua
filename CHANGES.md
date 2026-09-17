@@ -4,6 +4,64 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## 0.6.5 (2026-09-17) -- Milestone 6, second demo pass: 7 more tagged ports
+
+- Ported a first, no-new-dependency batch of libharu's remaining
+  original demos (see `docs/roadmap.md`'s Milestone 6 section for the
+  full remaining list and the scope reasoning behind this batch):
+  - `demo/tagged_arc_demo.c` (`arc_demo.c` port): a pie chart, real
+    `Document > Figure` wrapping `HPDF_Page_Arc()`/`HPDF_Page_Circle()`
+    path-painting.
+  - `demo/tagged_line_demo.c` (`line_demo.c` port, scoped to the
+    vector-drawing operators no other demo yet exercises): line widths,
+    dash patterns, caps, joins, and all three Bezier curve constructors
+    (`CurveTo`/`CurveTo2`/`CurveTo3`).
+  - `demo/tagged_ext_gstate_demo.c` (`ext_gstate_demo.c` port, scoped to
+    4 representative blend modes of the original's 13 -- same
+    `/ExtGState` mechanism, not a different code path): transparency
+    and blend modes.
+  - `demo/tagged_font_list_demo.c` (`font_demo.c` port): all fourteen
+    Standard-14 fonts, tagged as a real `Document > L` list. Deliberately
+    **not** fully PDF/UA-1 compliant, matching `docmeta_demo`'s own
+    precedent -- Standard-14 fonts are never embedded, so ISO
+    14289-1:2014 7.21.4.1 and 7.21.7 are expected failures, not a bug
+    (see that file's own top comment). New recorded baseline in
+    `tests/run_all_demos.sh`: at most 2 failed rules (confirmed via a
+    real veraPDF run: 104 passed / 2 failed).
+  - `demo/tagged_text_demo.c` (merges `text_demo.c` + `text_demo2.c`,
+    one demo instead of two thinner ports since both originals are
+    fundamentally the same thing -- real readable text under different
+    `HPDF_Page` text-state settings): font sizes, rendering modes,
+    rotated/scaled text, char/word spacing, and `HPDF_Page_TextRect()`
+    paragraph alignment (left/right/center/justify).
+  - `demo/tagged_encoding_list_demo.c` (`encoding_list.c` port, scoped
+    to 3 of the original's 20 encodings, and reusing this project's
+    already-vendored `fonts/DejaVuSans.ttf` instead of the original's
+    GPL-licensed Type1 font -- avoids introducing a new font
+    asset/license just for this port): the same embedded font under
+    three different single-byte encodings, each producing its own real
+    `HPDF_Font` object.
+  - `demo/tagged_outline_demo.c` (`outline_demo.c` port): a 3-page
+    document with a real multi-entry outline tree (one root, three
+    children) -- every other demo in this project creates at most one
+    outline entry; this is the first real test of the multi-entry tree
+    code path.
+  - All 7 verified individually via a real veraPDF run before being
+    wired into `tests/run_all_demos.sh` (6 reach 106/106 full
+    compliance on the first attempt; `tagged_font_list_demo` at its
+    documented 2-failed-rule baseline) and via `leaks --atExit` (0
+    leaks, all 7).
+- `tests/run_all_demos.sh`: added all 7 to the `DEMOS` baseline table.
+  All 15 demos this project now ships pass or beat their recorded
+  baseline.
+- `character_map.c`, `chfont_demo.c`, `ttfont_demo_jp.c`,
+  `jpfont_demo.c`, `png_demo.c`, `image_demo.c`, `jpeg_demo.c`,
+  `pdf_a_conformance.c`, `encryption.c`, `permission.c`,
+  `text_annotation.c`, `attach.c`, and `slide_show_demo.c` are a
+  deliberate scope cut for a later pass (CJK fonts and PNG images each
+  need a real new dependency/asset decision -- see
+  `docs/roadmap.md`'s Milestone 6 section), not an oversight.
+
 ## 0.6.4 (2026-09-17) -- CI, CMake install target, API reference
 
 - Added `.github/workflows/ci.yml`: builds on Linux and macOS for every

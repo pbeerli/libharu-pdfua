@@ -59,7 +59,11 @@ echo
 # name:max_failed_rules -- max_failed_rules is the recorded baseline (see
 # the header comment above): 0 for every demo this project claims is
 # fully PDF/UA-1 conformant, 3 for docmeta_demo's own documented,
-# deliberate partial scope.
+# deliberate partial scope, 2 for tagged_font_list_demo's own documented,
+# deliberate partial scope (see that file's own top comment: it exists to
+# show libharu's non-embeddable Standard-14 fonts, so ISO 14289-1:2014
+# 7.21.4.1 (fonts must be embedded) and 7.21.7 (fonts must map to
+# Unicode) are expected, not a bug).
 DEMOS=(
     "tagged_table_demo:0"
     "tagged_histogram_demo:0"
@@ -68,6 +72,13 @@ DEMOS=(
     "tagged_font_demo:0"
     "tagged_image_demo:0"
     "tagged_annotation_demo:0"
+    "tagged_arc_demo:0"
+    "tagged_line_demo:0"
+    "tagged_ext_gstate_demo:0"
+    "tagged_text_demo:0"
+    "tagged_encoding_list_demo:0"
+    "tagged_outline_demo:0"
+    "tagged_font_list_demo:2"
     "docmeta_demo:3"
 )
 

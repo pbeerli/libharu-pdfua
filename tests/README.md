@@ -2,24 +2,31 @@
 
 `run_all_demos.sh` -- real test coverage for this project's demo suite,
 added in Milestone 6 (see `docs/roadmap.md`). Builds every demo (the
-original five plus Milestone 6's three new ports: `tagged_font_demo`,
-`tagged_image_demo`, `tagged_annotation_demo`), runs each one to
+original five, Milestone 6's first pass -- `tagged_font_demo`,
+`tagged_image_demo`, `tagged_annotation_demo` -- and Milestone 6's
+second pass -- `tagged_arc_demo`, `tagged_line_demo`,
+`tagged_ext_gstate_demo`, `tagged_font_list_demo`, `tagged_text_demo`,
+`tagged_encoding_list_demo`, `tagged_outline_demo`), runs each one to
 (re)generate its PDF, and validates every PDF against the real PDF/UA-1
 ruleset via `validate/run_verapdf.sh` -- exercising libharu's own
-TrueType-embedding, raw-image, annotation, table, and path-painting code
-paths through this project's tagging layer, not just this project's own
-additions in isolation.
+TrueType-embedding, raw-image, annotation, table, path-painting, vector
+graphics, extended graphics state, text-feature, encoding, and outline
+code paths through this project's tagging layer, not just this
+project's own additions in isolation.
 
 Each demo has a recorded baseline (see the `DEMOS` table inside the
-script): the seven fully tagged demos must reach full PDF/UA-1
-compliance (veraPDF `PASS`, 0 failed rules); `docmeta_demo` is Milestone
-0 scaffolding (untagged page content, a non-embedded Standard-14 font)
-and is deliberately not fully compliant -- its own recorded baseline is
-"at most 3 failed rules". The script fails loudly (nonzero exit, one
+script): thirteen of the fifteen demos must reach full PDF/UA-1
+compliance (veraPDF `PASS`, 0 failed rules); two are deliberately not
+fully compliant, each with its own documented, bounded baseline:
+`docmeta_demo` is Milestone 0 scaffolding (untagged page content, a
+non-embedded Standard-14 font, "at most 3 failed rules"), and
+`tagged_font_list_demo` exists specifically to show libharu's
+non-embeddable Standard-14 fonts ("at most 2 failed rules" -- see that
+file's own top comment). The script fails loudly (nonzero exit, one
 `FAIL:` line per regressed demo naming which demo and how many rules
 failed) if any demo's real veraPDF result is worse than its recorded
-baseline; it does not require `docmeta_demo` to reach full `PASS`, since
-that was never its scope.
+baseline; it does not require the two intentionally-partial demos to
+reach full `PASS`, since that was never their scope.
 
 Usage:
 
