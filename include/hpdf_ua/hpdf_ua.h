@@ -357,6 +357,146 @@ HPDF_EXPORT(HPDF_STATUS)
 HPDF_UA_TagAnnotation (HPDF_UA_Context ctx, HPDF_Page page,
                         HPDF_UA_StructElem elem, HPDF_Annotation annot);
 
+/* ---------------------------------------------------------------------
+ * 0.9.0: typed artifacts and the tag stack -- ported from Migrate-n's
+ * tagged PDF report (hundreds of pages of tables and figures in large
+ * runs), where the bare Begin/End calls above were wrapped in a small
+ * stack helper so that ordinary drawing code could survive page breaks.
+ * See docs/api.md, "Multi-page documents and tables".
+ * ------------------------------------------------------------------- */
+
+/* Artifact types (PDF 32000-1 14.8.2.2.2). HPDF_UA_ARTIFACT_NONE writes
+ * the plain "/Artifact BMC" form HPDF_UA_BeginArtifact() always wrote. */
+typedef enum {
+    HPDF_UA_ARTIFACT_NONE = 0,
+    HPDF_UA_ARTIFACT_PAGINATION,  /* running headers/footers, page numbers,
+                                   * table headers repeated on a
+                                   * continuation page */
+    HPDF_UA_ARTIFACT_LAYOUT,      /* rules, borders, cell shading */
+    HPDF_UA_ARTIFACT_PAGE,        /* printer's marks */
+    HPDF_UA_ARTIFACT_BACKGROUND   /* background images/colour */
+} HPDF_UA_ArtifactType;
+
+/* REAL. Same as HPDF_UA_BeginArtifact(), but writes
+ * "/Artifact <</Type /...>> BDC" so assistive technology knows what kind
+ * of decoration it skips. Close with HPDF_UA_EndArtifact(). */
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_BeginArtifactOfType (HPDF_UA_Context ctx, HPDF_Page page,
+                              HPDF_UA_ArtifactType type);
+
+/* Opaque tag stack: the chain of open structure elements from the
+ * document root down to the element currently being drawn, plus which
+ * marked-content or artifact span is open and on which page. One stack
+ * per context is the normal case. */
+typedef struct _HPDF_UA_Stack_Rec *HPDF_UA_Stack;
+
+/* REAL. Creates an empty stack on `ctx`. Returns NULL on bad parameter
+ * or allocation failure. */
+HPDF_EXPORT(HPDF_UA_Stack)
+HPDF_UA_NewStack (HPDF_UA_Context ctx);
+
+/* REAL. Closes any open span, ends every element still on the stack
+ * (innermost first) and frees the stack. Call before
+ * HPDF_UA_FreeContext(). */
+HPDF_EXPORT(void)
+HPDF_UA_FreeStack (HPDF_UA_Stack stack);
+
+/* REAL. Begins a new element of `role` as a child of the current top
+ * (or as a top-level element when the stack is empty) and pushes it.
+ * The element is linked into its parent's /K right here, at push time
+ * (see hpdf_ua_structure.c) -- popping it later never removes it from
+ * the tree. Returns the new element, or NULL on failure. */
+HPDF_EXPORT(HPDF_UA_StructElem)
+HPDF_UA_Stack_Push (HPDF_UA_Stack stack, HPDF_UA_StructType role);
+
+/* REAL. Ends the top element and pops it. Closes the marked-content span
+ * first if one is open. */
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_Stack_Pop (HPDF_UA_Stack stack);
+
+/* REAL. The current top element (NULL when empty) and the depth. */
+HPDF_EXPORT(HPDF_UA_StructElem)
+HPDF_UA_Stack_Top (HPDF_UA_Stack stack);
+
+HPDF_EXPORT(HPDF_UINT)
+HPDF_UA_Stack_Depth (HPDF_UA_Stack stack);
+
+/* REAL. HPDF_UA_SetAlternateText()/HPDF_UA_SetActualText()/
+ * HPDF_UA_SetTableHeaderScope() on the top element. */
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_Stack_SetAlternateText (HPDF_UA_Stack stack, const char *alt_text);
+
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_Stack_SetActualText (HPDF_UA_Stack stack, const char *actual_text);
+
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_Stack_SetTableHeaderScope (HPDF_UA_Stack stack,
+                                    HPDF_UA_TableScope scope);
+
+/* REAL. Opens a marked-content span for the top element on `page`
+ * (with /ActualText on the span for the _WithActualText form; a NULL
+ * `actual_text` behaves like the plain form). The stack remembers the
+ * page, so the End/Suspend calls below need none. At most one content
+ * span per stack is open at a time. */
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_Stack_BeginContent (HPDF_UA_Stack stack, HPDF_Page page);
+
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_Stack_BeginContentWithActualText (HPDF_UA_Stack stack,
+                                           HPDF_Page page,
+                                           const char *actual_text);
+
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_Stack_EndContent (HPDF_UA_Stack stack);
+
+/* REAL. Opens/closes an artifact span (see HPDF_UA_BeginArtifactOfType()).
+ * An artifact and a content span may not be open at the same time. */
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_Stack_BeginArtifact (HPDF_UA_Stack stack, HPDF_Page page,
+                              HPDF_UA_ArtifactType type);
+
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_Stack_EndArtifact (HPDF_UA_Stack stack);
+
+/* REAL. Page-break pair. Call HPDF_UA_Stack_SuspendForNewPage() right
+ * before HPDF_AddPage() (or wherever your code starts a new page) and
+ * HPDF_UA_Stack_ResumeAfterNewPage() once the new page is set up (after
+ * drawing its running header/footer artifacts). If a content span was
+ * open, suspend closes it AND pops its element -- an element's content
+ * may live on one page only (HPDF_UA_BeginMarkedContent()) -- and resume
+ * pushes a new sibling of the same role and reopens content on the new
+ * page. An open artifact span is closed and reopened with its type.
+ *
+ * Only the innermost element is split. Its parent stays open across
+ * the break, so if the innermost element is a table cell, the row gains
+ * an extra cell (veraPDF 7.2/42, "rows shall have the same number of
+ * columns"). Close the cell and row before anything that can start a new
+ * page; see docs/api.md. */
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_Stack_SuspendForNewPage (HPDF_UA_Stack stack);
+
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_Stack_ResumeAfterNewPage (HPDF_UA_Stack stack, HPDF_Page new_page);
+
+/* REAL. Same-page pair, for drawing a nested element (a figure inside a
+ * paragraph, a small table inside a list item) while the outer element's
+ * content span is open: suspend ends the outer span (only one span may be
+ * open per page) and pops its element, the caller pushes/draws/pops the
+ * nested element(s), and resume pushes a new sibling of the outer role
+ * on `page` -- the page current now, which may differ from the one at
+ * suspend time if the nested drawing itself broke the page.
+ *
+ * This pair keeps its own saved state, separate from the page-break
+ * pair: the two windows nest (a nested table may break the page several
+ * times between suspend and resume), and a page break that found nothing
+ * to suspend would otherwise overwrite the outer pair's saved state and
+ * silently leave the rest of the outer content untagged. */
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_Stack_SuspendContent (HPDF_UA_Stack stack);
+
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_Stack_ResumeContent (HPDF_UA_Stack stack, HPDF_Page page);
+
 #ifdef __cplusplus
 }
 #endif

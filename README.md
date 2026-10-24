@@ -28,7 +28,7 @@ target -- see `docs/pdf_ua_requirements.md`.
 
 ## Status
 
-**Milestones 1-6 done, 2026-09-17 -- twenty-six demos, twenty-four of
+**Milestones 1-6 done 2026-09-17, tag stack added 2026-10-24 (0.9.0) -- twenty-seven demos, twenty-five of
 them fully PDF/UA-1 compliant (106/106 checks under veraPDF, "PASS,"
 not just a lower failure count); CI, a CMake install target, and an API
 reference are in place too.** See `docs/roadmap.md` for the full
@@ -41,7 +41,9 @@ optionally, PDF/A conformance in the same packet, see
 marked-content tagging (`HPDF_UA_Context`,
 `HPDF_UA_BeginStructureElement()`, `HPDF_UA_BeginMarkedContent()`,
 table-header `/Scope`, figure `/Alt`, artifact marking, automatic
-`/Tabs /S`), a real document outline (including multi-entry trees and
+`/Tabs /S`), a tag stack for documents whose tables and text run over
+several pages (`HPDF_UA_Stack`, typed `/Pagination`/`/Layout` artifacts,
+see `docs/api.md`), a real document outline (including multi-entry trees and
 CJK-encoded titles), tagged link and non-link annotations
 (`HPDF_UA_TagAnnotation()`: `/OBJR`, `/StructParent`, `/Contents`, and
 a real `HPDF_UA_ROLE_ANNOT` role for non-Link annotations per ISO
@@ -57,7 +59,7 @@ Simplified Chinese) fonts, a CJK glyph-table grid, and a real,
 dual-conformant **PDF/A-3B + PDF/UA-1** document (verified against
 both veraPDF flavours, not just asserted) -- see `demo/` and
 `tests/run_all_demos.sh`, which builds and PDF/UA-1-validates all
-twenty-six demos automatically (also run in CI on Linux and macOS for
+twenty-seven demos automatically (also run in CI on Linux and macOS for
 every push/PR, see `.github/workflows/ci.yml`); only two upstream
 helper files that were never real demos (`grid_sheet.c`,
 `make_rawimage.c`) are not ported. This project can also be installed
@@ -123,6 +125,7 @@ cd build
 ./tagged_chfont_demo    # two tagged, independently embedded CJK fonts, Chinese and Japanese (chfont_demo.c port)
 ./tagged_character_map_demo # tagged Shift-JIS glyph-table grid against an embedded font (character_map.c port)
 ./tagged_pdfa_demo      # real, dual-conformant PDF/A-3B + PDF/UA-1 document (pdf_a_conformance.c port)
+./tagged_multipage_table_demo # 96-row table over 3 pages, repeated header artifacts, paragraph split across pages (HPDF_UA_Stack)
 cd ..
 ```
 
@@ -140,15 +143,15 @@ current platform decision.
 
 ## Validating output
 
-To check all twenty-six demos against their recorded PDF/UA-1 baselines
-at once (this is what CI runs; two of the twenty-six need libpng
+To check all twenty-seven demos against their recorded PDF/UA-1 baselines
+at once (this is what CI runs; two of the twenty-seven need libpng
 installed to even build, see "Requirements" above):
 
 ```sh
 tests/run_all_demos.sh build
 ```
 
-Twenty-four of the twenty-six demos are fully PDF/UA-1 compliant --
+Twenty-four of the twenty-seven demos are fully PDF/UA-1 compliant --
 veraPDF reports 0 failed rules. Two are deliberately not, by design, not a bug,
 each with its own recorded baseline `tests/run_all_demos.sh` checks
 against instead of full compliance: `docmeta_demo` (Milestone 0

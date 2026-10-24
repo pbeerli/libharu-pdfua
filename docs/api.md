@@ -107,6 +107,94 @@ Validate the result with `validate/run_verapdf.sh example.pdf`. See
 `demo/tagged_annotation_demo.c` (link annotations) for complete,
 real, validated programs exercising every function above.
 
+## Multi-page documents and tables
+
+The calls above are enough for a document whose content is laid out
+in one pass with fixed coordinates. Report-style output, where a long
+table or paragraph is drawn line by line and a helper starts a new page
+whenever the next line does not fit, needs a little more bookkeeping.
+The tag stack (0.9.0) holds it. It was generalized from the tagging
+layer of Migrate-n's PDF report, a program whose tables routinely run
+over many pages; every rule below comes from a defect veraPDF or
+avalpdf found there.
+
+| Function | What it does |
+| --- | --- |
+| `HPDF_UA_BeginArtifactOfType(ctx, page, type)` | Like `HPDF_UA_BeginArtifact()`, but writes `/Artifact <</Type /Pagination>> BDC` (or `_LAYOUT`, `_PAGE`, `_BACKGROUND`). Close with `HPDF_UA_EndArtifact()`. |
+| `HPDF_UA_NewStack(ctx)` / `HPDF_UA_FreeStack(stack)` | Creates an empty stack on a context; free closes any open span and ends every element still on the stack. Free it before `HPDF_UA_FreeContext()`. |
+| `HPDF_UA_Stack_Push(stack, role)` / `HPDF_UA_Stack_Pop(stack)` | Begins a child of the top element (top-level when empty) / ends the top element, closing its content span first. |
+| `HPDF_UA_Stack_Top(stack)` / `HPDF_UA_Stack_Depth(stack)` | The top element and the depth. |
+| `HPDF_UA_Stack_SetAlternateText` / `_SetActualText` / `_SetTableHeaderScope` | The corresponding context calls, applied to the top element. |
+| `HPDF_UA_Stack_BeginContent(stack, page)` / `_BeginContentWithActualText(stack, page, text)` / `_EndContent(stack)` | Opens / closes the marked-content span for the top element. The stack remembers the page. |
+| `HPDF_UA_Stack_BeginArtifact(stack, page, type)` / `_EndArtifact(stack)` | Typed artifact span, tracked by the stack. |
+| `HPDF_UA_Stack_SuspendForNewPage(stack)` / `_ResumeAfterNewPage(stack, new_page)` | Call around your own "start a new page" code. An open content span is ended and its element popped; on resume a new sibling of the same role is pushed and its content reopened on the new page. An open artifact is closed and reopened with its type. |
+| `HPDF_UA_Stack_SuspendContent(stack)` / `_ResumeContent(stack, page)` | The same for a nested element drawn while the outer element's content is open (a figure inside a paragraph). Separate saved state from the page-break pair, because the two can nest. |
+
+A typical "new page" helper:
+
+```c
+static void new_page(Doc *d)
+{
+    HPDF_UA_Stack_SuspendForNewPage(d->stack);
+    d->page = HPDF_AddPage(d->pdf);
+    HPDF_UA_Stack_BeginArtifact(d->stack, d->page, HPDF_UA_ARTIFACT_PAGINATION);
+    /* running header, page number */
+    HPDF_UA_Stack_EndArtifact(d->stack);
+    d->y = TOP;
+    HPDF_UA_Stack_ResumeAfterNewPage(d->stack, d->page);
+}
+```
+
+Rules, each a real failure in the original code:
+
+- **One element, one page.** `HPDF_UA_BeginMarkedContent()` refuses an
+  element whose content is already on another page. A paragraph that
+  crosses a page becomes two sibling `P` elements; the suspend/resume
+  pair does that for you.
+- **Elements join the tree when pushed, not when popped.** An element is
+  appended to its parent's `/K` at `Begin`/`Push` time, so popping it
+  later does not take it out again. Consequence for tables: the
+  page-break pair splits only the innermost element. If that is a `TD`,
+  the open `TR` gains an extra cell on the new page and veraPDF reports
+  7.2/42 ("table rows shall have the same number of columns"). Draw the
+  cell, pop the cell and the row, and only then call the code that may
+  start a new page. If one cell's content really must wrap over a page
+  (a long sequence, say), close the row yourself at the break and open a
+  continuation row with empty cells for the other columns.
+- **Repeated table headers are artifacts.** Tag the header row once, as
+  `TH` with `/Scope`, on the first page. On continuation pages draw it
+  inside a `HPDF_UA_ARTIFACT_PAGINATION` span. A second tagged header row
+  makes screen readers announce it again in the middle of the data, and
+  avalpdf flags tables with more than one header row. Keep the header on
+  the same page as at least the first data row.
+- **Decoration is an artifact too**: page borders, rules, zebra shading
+  (`_LAYOUT`), running headers and page numbers (`_PAGINATION`).
+  Untagged content fails 7.1/3.
+- **No newline in `HPDF_Page_TextOut()`.** A trailing `"\n"` (printf habit)
+  is drawn as a glyph with no Unicode meaning and fails 7.21.7/2 and
+  7.21.8. Strip it before drawing.
+- **No padding spaces.** Right-align numbers by measuring them with
+  `HPDF_Page_TextWidth()` instead of padding with spaces; padding
+  spaces become part of the extracted text (avalpdf "consecutive
+  spaces"). Also measure at the size you will draw at: a page break in
+  between may have left the footer's font size set.
+- **Embed every font.** The Standard 14 fonts are never embedded and fail
+  7.21.4.1. When an existing layout was tuned to Helvetica or Courier
+  widths, embed a metric-compatible font (Liberation Sans, Sans Italic,
+  Mono; SIL OFL) so nothing moves. Migrate-n first tried DejaVu, whose
+  wider glyphs pushed fixed-position lines off the page. To avoid
+  depending on font files at run time, compile the TTF into a byte array
+  and load it with `HPDF_LoadTTFontFromMemory()`.
+- **Symbol-font cells get `/ActualText`.** Greek or math glyphs drawn
+  through a symbol or CID font may not be recoverable by a checker that
+  walks the content stream. Open such a cell with
+  `HPDF_UA_Stack_BeginContentWithActualText()` (for example "Theta_1").
+
+`demo/tagged_multipage_table_demo.c` puts all of this together: a 96-row
+table over three pages, a notes paragraph that runs onto a fourth page,
+and a figure that interrupts that paragraph. It passes veraPDF's
+PDF/UA-1 profile (106/106) and scores 100% in avalpdf.
+
 ## Using this library from another CMake project
 
 Once installed (`cmake --install build`, or a packaged install elsewhere

@@ -4,6 +4,32 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## 0.9.0 (2026-10-24) -- tag stack and multi-page tables
+
+Ported from the tagging layer of Migrate-n's PDF report (`pretty_ua.c`),
+which tags reports of hundreds of pages.
+
+- New `HPDF_UA_Stack` (`src/ua/hpdf_ua_stack.c`): push/pop of structure
+  elements, content and artifact spans that remember their page, and two
+  independent suspend/resume pairs, one for page breaks and one for a
+  nested element drawn inside open content. Context-owned state instead
+  of the original's module globals, no fixed depth limit, misuse
+  reported through `HPDF_RaiseError()`.
+- New `HPDF_UA_BeginArtifactOfType()`: `/Pagination`, `/Layout`, `/Page`
+  and `/Background` artifacts (`HPDF_UA_BeginArtifact()` is unchanged and
+  now calls it with `HPDF_UA_ARTIFACT_NONE`).
+- New `demo/tagged_multipage_table_demo.c`: a 96-row table over three
+  pages with the header repeated as a Pagination artifact, rows closed
+  before every page advance, zebra shading as Layout artifacts, a notes
+  paragraph split across a page break and interrupted by a figure.
+  veraPDF PDF/UA-1 106/106, avalpdf 100%. Added to
+  `tests/run_all_demos.sh` (27 demos).
+- `docs/api.md`: "Multi-page documents and tables", the stack API and
+  the rules learned in Migrate-n (push-time `/K` linking and table rows
+  across page breaks, repeated headers as artifacts, newline and padding
+  characters in drawn text, metric-compatible embedded fonts,
+  `/ActualText` for symbol-font cells).
+
 ## 0.8.0 (2026-09-17) -- Milestone 6 complete: character_map + PDF/A demos
 
 Closes out both items left in Milestone 6's demo-porting scope (see

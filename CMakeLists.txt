@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(libharu-pdfua
-    VERSION 0.8.0
+    VERSION 0.9.0
     DESCRIPTION "PDF/UA-1 tagged-PDF extensions for libharu"
     LANGUAGES C)
 
@@ -41,6 +41,7 @@ add_library(hpdf_ua STATIC
     src/ua/hpdf_ua_context.c
     src/ua/hpdf_ua_structure.c
     src/ua/hpdf_ua_metadata.c
+    src/ua/hpdf_ua_stack.c
 )
 target_include_directories(hpdf_ua
     PUBLIC
@@ -90,6 +91,16 @@ if(LIBHARU_PDFUA_BUILD_DEMOS)
     target_link_libraries(tagged_example_demo PRIVATE hpdf_ua)
     target_compile_definitions(tagged_example_demo PRIVATE
         HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
+
+    # 0.9.0: a table over several pages, drawn with the tag stack
+    # (HPDF_UA_Stack, ported from Migrate-n's report code).
+    add_executable(tagged_multipage_table_demo demo/tagged_multipage_table_demo.c)
+    target_link_libraries(tagged_multipage_table_demo PRIVATE hpdf_ua)
+    target_compile_definitions(tagged_multipage_table_demo PRIVATE
+        HPDF_UA_DEMO_FONT_PATH="${HPDF_UA_DEMO_FONT_PATH}")
+    if(NOT WIN32)
+        target_link_libraries(tagged_multipage_table_demo PRIVATE m)
+    endif()
 
     add_executable(docmeta_demo demo/docmeta_demo.c)
     target_link_libraries(docmeta_demo PRIVATE hpdf_ua)

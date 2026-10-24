@@ -94,6 +94,7 @@ DEMOS=(
     "tagged_chfont_demo:0"
     "tagged_character_map_demo:0"
     "tagged_pdfa_demo:0"
+    "tagged_multipage_table_demo:0"
     "docmeta_demo:3"
 )
 

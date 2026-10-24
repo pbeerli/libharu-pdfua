@@ -425,8 +425,26 @@ HPDF_UA_SetTableDataHeaders (HPDF_UA_Context ctx, HPDF_UA_StructElem td_elem,
 HPDF_EXPORT(HPDF_STATUS)
 HPDF_UA_BeginArtifact (HPDF_UA_Context ctx, HPDF_Page page)
 {
+    return HPDF_UA_BeginArtifactOfType (ctx, page, HPDF_UA_ARTIFACT_NONE);
+}
+
+HPDF_EXPORT(HPDF_STATUS)
+HPDF_UA_BeginArtifactOfType (HPDF_UA_Context ctx, HPDF_Page page,
+                              HPDF_UA_ArtifactType type)
+{
+    static const char * const OPERATORS[] = {
+        "/Artifact BMC\012",
+        "/Artifact <</Type /Pagination>> BDC\012",
+        "/Artifact <</Type /Layout>> BDC\012",
+        "/Artifact <</Type /Page>> BDC\012",
+        "/Artifact <</Type /Background>> BDC\012"
+    };
     HPDF_UA_PageEntry page_entry;
     HPDF_PageAttr attr;
+
+    if (ctx && (type < HPDF_UA_ARTIFACT_NONE
+                || type > HPDF_UA_ARTIFACT_BACKGROUND))
+        return HPDF_RaiseError (&ctx->pdf->error, HPDF_INVALID_PARAMETER, 0);
 
     if (!ctx || !page)
         return HPDF_INVALID_PARAMETER;
@@ -460,8 +478,9 @@ HPDF_UA_BeginArtifact (HPDF_UA_Context ctx, HPDF_Page page)
      * veraPDF failure (ISO 14289-1:2014 7.1/3, "content shall be marked
      * as Artifact or tagged as real content") on exactly the wrapped
      * region, because a malformed BDC token is not recognized as valid
-     * tagging at all. */
-    if (HPDF_Stream_WriteStr (attr->stream, "/Artifact BMC\012") != HPDF_OK)
+     * tagging at all. The typed forms carry a property dict, so they do
+     * use BDC. */
+    if (HPDF_Stream_WriteStr (attr->stream, OPERATORS[type]) != HPDF_OK)
         return HPDF_CheckError (&ctx->pdf->error);
 
     return HPDF_OK;
