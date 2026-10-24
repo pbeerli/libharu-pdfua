@@ -4,6 +4,12 @@ Version numbering: `MAJOR.MINOR.PATCH`, starting at `0.1.0` (pre-1.0,
 milestone-driven -- see `docs/roadmap.md`). Bump `MINOR` when a roadmap
 milestone completes, `PATCH` for fixes within a milestone.
 
+## 0.9.1 (2026-10-24) -- stack span queries
+
+- New `HPDF_UA_Stack_ContentOpen()` / `HPDF_UA_Stack_ArtifactOpen()`.
+  Migrate-n's report code tolerates redundant Begin/End calls; with
+  these it can check first, since a raised error ends its PDF output.
+
 ## 0.9.0 (2026-10-24) -- tag stack and multi-page tables
 
 Ported from the tagging layer of Migrate-n's PDF report (`pretty_ua.c`),

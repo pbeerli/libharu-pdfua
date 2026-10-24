@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(libharu-pdfua
-    VERSION 0.9.0
+    VERSION 0.9.1
     DESCRIPTION "PDF/UA-1 tagged-PDF extensions for libharu"
     LANGUAGES C)
 

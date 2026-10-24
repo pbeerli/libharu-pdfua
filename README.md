@@ -28,7 +28,7 @@ target -- see `docs/pdf_ua_requirements.md`.
 
 ## Status
 
-**Milestones 1-6 done 2026-09-17, tag stack added 2026-10-24 (0.9.0) -- twenty-seven demos, twenty-five of
+**Milestones 1-6 done 2026-09-17, tag stack added 2026-10-24 (0.9.0, span queries 0.9.1) -- twenty-seven demos, twenty-five of
 them fully PDF/UA-1 compliant (106/106 checks under veraPDF, "PASS,"
 not just a lower failure count); CI, a CMake install target, and an API
 reference are in place too.** See `docs/roadmap.md` for the full

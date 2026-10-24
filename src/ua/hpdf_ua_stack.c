@@ -158,6 +158,18 @@ HPDF_UA_Stack_Depth (HPDF_UA_Stack stack)
     return stack ? stack->depth : 0;
 }
 
+HPDF_EXPORT(HPDF_BOOL)
+HPDF_UA_Stack_ContentOpen (HPDF_UA_Stack stack)
+{
+    return (HPDF_BOOL) (stack && stack->content_page != NULL);
+}
+
+HPDF_EXPORT(HPDF_BOOL)
+HPDF_UA_Stack_ArtifactOpen (HPDF_UA_Stack stack)
+{
+    return (HPDF_BOOL) (stack && stack->artifact_page != NULL);
+}
+
 HPDF_EXPORT(HPDF_STATUS)
 HPDF_UA_Stack_SetAlternateText (HPDF_UA_Stack stack, const char *alt_text)
 {

@@ -124,6 +124,7 @@ avalpdf found there.
 | `HPDF_UA_NewStack(ctx)` / `HPDF_UA_FreeStack(stack)` | Creates an empty stack on a context; free closes any open span and ends every element still on the stack. Free it before `HPDF_UA_FreeContext()`. |
 | `HPDF_UA_Stack_Push(stack, role)` / `HPDF_UA_Stack_Pop(stack)` | Begins a child of the top element (top-level when empty) / ends the top element, closing its content span first. |
 | `HPDF_UA_Stack_Top(stack)` / `HPDF_UA_Stack_Depth(stack)` | The top element and the depth. |
+| `HPDF_UA_Stack_ContentOpen(stack)` / `HPDF_UA_Stack_ArtifactOpen(stack)` | Whether a content / artifact span is open, so a caller can skip a redundant Begin/End instead of raising an error. |
 | `HPDF_UA_Stack_SetAlternateText` / `_SetActualText` / `_SetTableHeaderScope` | The corresponding context calls, applied to the top element. |
 | `HPDF_UA_Stack_BeginContent(stack, page)` / `_BeginContentWithActualText(stack, page, text)` / `_EndContent(stack)` | Opens / closes the marked-content span for the top element. The stack remembers the page. |
 | `HPDF_UA_Stack_BeginArtifact(stack, page, type)` / `_EndArtifact(stack)` | Typed artifact span, tracked by the stack. |
